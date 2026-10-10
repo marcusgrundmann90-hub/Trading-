@@ -1,0 +1,7 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/data/watchlist.json
+backend/data/*.tmp
