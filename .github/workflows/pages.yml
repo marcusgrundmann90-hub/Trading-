@@ -1,0 +1,78 @@
+name: Handy-App (GitHub Pages)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "scripts/**"
+      - ".github/workflows/pages.yml"
+  schedule:
+    # Werktags alle 30 Minuten zwischen 06:00 und 21:59 UTC (Börsenzeiten EU + US).
+    # Minuten 7/37 statt 0/30, weil GitHub zur vollen/halben Stunde oft verzögert.
+    - cron: "7,37 6-21 * * 1-5"
+    # Wochenende einmal täglich (hält den Aktien-Snapshot frisch; Krypto kommt live aus dem Browser).
+    - cron: "17 12 * * 0,6"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  test:
+    # Tests nur bei Push / manuellem Start, nicht bei jedem Zeitplan-Lauf.
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: JS-Tests (Analyse-Engine)
+        run: node --test "web/tests/*.test.mjs"
+      - name: Python-Tests (Daten-Job)
+        run: python -m unittest discover -s scripts/tests -v
+
+  deploy:
+    needs: test
+    # Läuft auch, wenn der Test-Job beim Zeitplan übersprungen wurde – aber nie nach fehlgeschlagenen Tests.
+    if: ${{ !cancelled() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Aktien-Daten holen (Yahoo)
+        # Schlagen mehr als 50 % der Symbole fehl, endet das Skript mit Exit 1:
+        # dann wird nicht deployt und die zuletzt veröffentlichte Version bleibt online.
+        run: python scripts/fetch_stocks.py
+      - name: Site zusammenstellen
+        run: |
+          mkdir -p _site
+          rsync -a --delete --exclude 'tests/' --exclude 'fixtures/' --exclude '*.tmp' web/ _site/
+          touch _site/.nojekyll
+          # Service-Worker-Cache pro Commit erneuern, damit Handys Updates erhalten
+          sed -i "s/^const VERSION = '.*';/const VERSION = '${GITHUB_SHA::12}';/" _site/sw.js
+          grep -q "const VERSION = '${GITHUB_SHA::12}';" _site/sw.js
+          ls -la _site _site/data
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

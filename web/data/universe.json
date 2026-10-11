@@ -1,0 +1,544 @@
+{
+ "stocks": [
+  {
+   "symbol": "ADS.DE",
+   "name": "adidas",
+   "region": "DE"
+  },
+  {
+   "symbol": "AIR.DE",
+   "name": "Airbus",
+   "region": "DE"
+  },
+  {
+   "symbol": "ALV.DE",
+   "name": "Allianz",
+   "region": "DE"
+  },
+  {
+   "symbol": "BAS.DE",
+   "name": "BASF",
+   "region": "DE"
+  },
+  {
+   "symbol": "BAYN.DE",
+   "name": "Bayer",
+   "region": "DE"
+  },
+  {
+   "symbol": "BEI.DE",
+   "name": "Beiersdorf",
+   "region": "DE"
+  },
+  {
+   "symbol": "BMW.DE",
+   "name": "BMW",
+   "region": "DE"
+  },
+  {
+   "symbol": "BNR.DE",
+   "name": "Brenntag",
+   "region": "DE"
+  },
+  {
+   "symbol": "CBK.DE",
+   "name": "Commerzbank",
+   "region": "DE"
+  },
+  {
+   "symbol": "CON.DE",
+   "name": "Continental",
+   "region": "DE"
+  },
+  {
+   "symbol": "DTG.DE",
+   "name": "Daimler Truck",
+   "region": "DE"
+  },
+  {
+   "symbol": "DBK.DE",
+   "name": "Deutsche Bank",
+   "region": "DE"
+  },
+  {
+   "symbol": "DB1.DE",
+   "name": "Deutsche Börse",
+   "region": "DE"
+  },
+  {
+   "symbol": "DHL.DE",
+   "name": "DHL Group",
+   "region": "DE"
+  },
+  {
+   "symbol": "DTE.DE",
+   "name": "Deutsche Telekom",
+   "region": "DE"
+  },
+  {
+   "symbol": "EOAN.DE",
+   "name": "E.ON",
+   "region": "DE"
+  },
+  {
+   "symbol": "FRE.DE",
+   "name": "Fresenius",
+   "region": "DE"
+  },
+  {
+   "symbol": "FME.DE",
+   "name": "Fresenius Medical Care",
+   "region": "DE"
+  },
+  {
+   "symbol": "HNR1.DE",
+   "name": "Hannover Rück",
+   "region": "DE"
+  },
+  {
+   "symbol": "HEI.DE",
+   "name": "Heidelberg Materials",
+   "region": "DE"
+  },
+  {
+   "symbol": "HEN3.DE",
+   "name": "Henkel",
+   "region": "DE"
+  },
+  {
+   "symbol": "IFX.DE",
+   "name": "Infineon",
+   "region": "DE"
+  },
+  {
+   "symbol": "MBG.DE",
+   "name": "Mercedes-Benz",
+   "region": "DE"
+  },
+  {
+   "symbol": "MRK.DE",
+   "name": "Merck KGaA",
+   "region": "DE"
+  },
+  {
+   "symbol": "MTX.DE",
+   "name": "MTU Aero Engines",
+   "region": "DE"
+  },
+  {
+   "symbol": "MUV2.DE",
+   "name": "Munich Re",
+   "region": "DE"
+  },
+  {
+   "symbol": "P911.DE",
+   "name": "Porsche AG",
+   "region": "DE"
+  },
+  {
+   "symbol": "PAH3.DE",
+   "name": "Porsche SE",
+   "region": "DE"
+  },
+  {
+   "symbol": "QIA.DE",
+   "name": "Qiagen",
+   "region": "DE"
+  },
+  {
+   "symbol": "RHM.DE",
+   "name": "Rheinmetall",
+   "region": "DE"
+  },
+  {
+   "symbol": "RWE.DE",
+   "name": "RWE",
+   "region": "DE"
+  },
+  {
+   "symbol": "SAP.DE",
+   "name": "SAP",
+   "region": "DE"
+  },
+  {
+   "symbol": "G24.DE",
+   "name": "Scout24",
+   "region": "DE"
+  },
+  {
+   "symbol": "SIE.DE",
+   "name": "Siemens",
+   "region": "DE"
+  },
+  {
+   "symbol": "ENR.DE",
+   "name": "Siemens Energy",
+   "region": "DE"
+  },
+  {
+   "symbol": "SHL.DE",
+   "name": "Siemens Healthineers",
+   "region": "DE"
+  },
+  {
+   "symbol": "SY1.DE",
+   "name": "Symrise",
+   "region": "DE"
+  },
+  {
+   "symbol": "VOW3.DE",
+   "name": "Volkswagen",
+   "region": "DE"
+  },
+  {
+   "symbol": "VNA.DE",
+   "name": "Vonovia",
+   "region": "DE"
+  },
+  {
+   "symbol": "ZAL.DE",
+   "name": "Zalando",
+   "region": "DE"
+  },
+  {
+   "symbol": "AAPL",
+   "name": "Apple",
+   "region": "US"
+  },
+  {
+   "symbol": "MSFT",
+   "name": "Microsoft",
+   "region": "US"
+  },
+  {
+   "symbol": "NVDA",
+   "name": "Nvidia",
+   "region": "US"
+  },
+  {
+   "symbol": "AMZN",
+   "name": "Amazon",
+   "region": "US"
+  },
+  {
+   "symbol": "GOOGL",
+   "name": "Alphabet",
+   "region": "US"
+  },
+  {
+   "symbol": "META",
+   "name": "Meta",
+   "region": "US"
+  },
+  {
+   "symbol": "TSLA",
+   "name": "Tesla",
+   "region": "US"
+  },
+  {
+   "symbol": "AVGO",
+   "name": "Broadcom",
+   "region": "US"
+  },
+  {
+   "symbol": "BRK-B",
+   "name": "Berkshire Hathaway",
+   "region": "US"
+  },
+  {
+   "symbol": "JPM",
+   "name": "JPMorgan",
+   "region": "US"
+  },
+  {
+   "symbol": "V",
+   "name": "Visa",
+   "region": "US"
+  },
+  {
+   "symbol": "MA",
+   "name": "Mastercard",
+   "region": "US"
+  },
+  {
+   "symbol": "LLY",
+   "name": "Eli Lilly",
+   "region": "US"
+  },
+  {
+   "symbol": "UNH",
+   "name": "UnitedHealth",
+   "region": "US"
+  },
+  {
+   "symbol": "JNJ",
+   "name": "Johnson & Johnson",
+   "region": "US"
+  },
+  {
+   "symbol": "XOM",
+   "name": "Exxon Mobil",
+   "region": "US"
+  },
+  {
+   "symbol": "WMT",
+   "name": "Walmart",
+   "region": "US"
+  },
+  {
+   "symbol": "COST",
+   "name": "Costco",
+   "region": "US"
+  },
+  {
+   "symbol": "PG",
+   "name": "Procter & Gamble",
+   "region": "US"
+  },
+  {
+   "symbol": "HD",
+   "name": "Home Depot",
+   "region": "US"
+  },
+  {
+   "symbol": "KO",
+   "name": "Coca-Cola",
+   "region": "US"
+  },
+  {
+   "symbol": "PEP",
+   "name": "PepsiCo",
+   "region": "US"
+  },
+  {
+   "symbol": "MCD",
+   "name": "McDonald's",
+   "region": "US"
+  },
+  {
+   "symbol": "DIS",
+   "name": "Disney",
+   "region": "US"
+  },
+  {
+   "symbol": "NKE",
+   "name": "Nike",
+   "region": "US"
+  },
+  {
+   "symbol": "BAC",
+   "name": "Bank of America",
+   "region": "US"
+  },
+  {
+   "symbol": "GS",
+   "name": "Goldman Sachs",
+   "region": "US"
+  },
+  {
+   "symbol": "ORCL",
+   "name": "Oracle",
+   "region": "US"
+  },
+  {
+   "symbol": "CRM",
+   "name": "Salesforce",
+   "region": "US"
+  },
+  {
+   "symbol": "ADBE",
+   "name": "Adobe",
+   "region": "US"
+  },
+  {
+   "symbol": "AMD",
+   "name": "AMD",
+   "region": "US"
+  },
+  {
+   "symbol": "INTC",
+   "name": "Intel",
+   "region": "US"
+  },
+  {
+   "symbol": "QCOM",
+   "name": "Qualcomm",
+   "region": "US"
+  },
+  {
+   "symbol": "MU",
+   "name": "Micron",
+   "region": "US"
+  },
+  {
+   "symbol": "TSM",
+   "name": "TSMC",
+   "region": "US"
+  },
+  {
+   "symbol": "NFLX",
+   "name": "Netflix",
+   "region": "US"
+  },
+  {
+   "symbol": "PLTR",
+   "name": "Palantir",
+   "region": "US"
+  },
+  {
+   "symbol": "COIN",
+   "name": "Coinbase",
+   "region": "US"
+  },
+  {
+   "symbol": "MSTR",
+   "name": "MicroStrategy",
+   "region": "US"
+  },
+  {
+   "symbol": "UBER",
+   "name": "Uber",
+   "region": "US"
+  },
+  {
+   "symbol": "SHOP",
+   "name": "Shopify",
+   "region": "US"
+  },
+  {
+   "symbol": "PYPL",
+   "name": "PayPal",
+   "region": "US"
+  },
+  {
+   "symbol": "ABNB",
+   "name": "Airbnb",
+   "region": "US"
+  },
+  {
+   "symbol": "SNOW",
+   "name": "Snowflake",
+   "region": "US"
+  },
+  {
+   "symbol": "CRWD",
+   "name": "CrowdStrike",
+   "region": "US"
+  },
+  {
+   "symbol": "PANW",
+   "name": "Palo Alto Networks",
+   "region": "US"
+  },
+  {
+   "symbol": "NOW",
+   "name": "ServiceNow",
+   "region": "US"
+  },
+  {
+   "symbol": "ARM",
+   "name": "Arm",
+   "region": "US"
+  },
+  {
+   "symbol": "SMCI",
+   "name": "Super Micro",
+   "region": "US"
+  },
+  {
+   "symbol": "HOOD",
+   "name": "Robinhood",
+   "region": "US"
+  },
+  {
+   "symbol": "RIVN",
+   "name": "Rivian",
+   "region": "US"
+  },
+  {
+   "symbol": "BA",
+   "name": "Boeing",
+   "region": "US"
+  },
+  {
+   "symbol": "ASML.AS",
+   "name": "ASML",
+   "region": "EU"
+  },
+  {
+   "symbol": "NOVO-B.CO",
+   "name": "Novo Nordisk",
+   "region": "EU"
+  },
+  {
+   "symbol": "MC.PA",
+   "name": "LVMH",
+   "region": "EU"
+  },
+  {
+   "symbol": "NESN.SW",
+   "name": "Nestlé",
+   "region": "EU"
+  },
+  {
+   "symbol": "ROG.SW",
+   "name": "Roche",
+   "region": "EU"
+  },
+  {
+   "symbol": "NOVN.SW",
+   "name": "Novartis",
+   "region": "EU"
+  },
+  {
+   "symbol": "SHEL.L",
+   "name": "Shell",
+   "region": "EU"
+  },
+  {
+   "symbol": "AZN.L",
+   "name": "AstraZeneca",
+   "region": "EU"
+  },
+  {
+   "symbol": "HSBA.L",
+   "name": "HSBC",
+   "region": "EU"
+  },
+  {
+   "symbol": "OR.PA",
+   "name": "L'Oréal",
+   "region": "EU"
+  },
+  {
+   "symbol": "SAN.PA",
+   "name": "Sanofi",
+   "region": "EU"
+  },
+  {
+   "symbol": "TTE.PA",
+   "name": "TotalEnergies",
+   "region": "EU"
+  },
+  {
+   "symbol": "AI.PA",
+   "name": "Air Liquide",
+   "region": "EU"
+  },
+  {
+   "symbol": "SU.PA",
+   "name": "Schneider Electric",
+   "region": "EU"
+  },
+  {
+   "symbol": "RMS.PA",
+   "name": "Hermès",
+   "region": "EU"
+  },
+  {
+   "symbol": "SAN.MC",
+   "name": "Banco Santander",
+   "region": "EU"
+  }
+ ]
+}

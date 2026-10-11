@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16223d"/>
+      <stop offset="1" stop-color="#0a0e16"/>
+    </linearGradient>
+    <radialGradient id="sweep" cx="256" cy="256" r="196" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5b8cff" stop-opacity="0.05"/>
+      <stop offset="1" stop-color="#5b8cff" stop-opacity="0.45"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g fill="none" stroke="#5b8cff" stroke-width="10">
+    <circle cx="256" cy="256" r="196" stroke-opacity="0.35"/>
+    <circle cx="256" cy="256" r="132" stroke-opacity="0.3"/>
+    <circle cx="256" cy="256" r="68" stroke-opacity="0.25"/>
+  </g>
+  <path d="M256 256 L256 60 A196 196 0 0 1 425.7 158 Z" fill="url(#sweep)"/>
+  <path d="M106 352 L196 270 L262 318 L398 168" fill="none" stroke="#2fd08a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="398" cy="168" r="30" fill="#2fd08a"/>
+  <circle cx="398" cy="168" r="12" fill="#0a0e16"/>
+</svg>
