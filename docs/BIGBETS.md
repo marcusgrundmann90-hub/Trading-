@@ -17,7 +17,7 @@ Exportverbot für Chips → betroffene Halbleiter ↓. Weltweit, nicht nur USA.
 5. **Push** (`bot/notify.py`): nur wenn `is_big_bet` und `confidence >= ALERT_MIN_CONFIDENCE` (Default 75). Über ntfy.sh.
 6. **Speichern** (`bot/state.py`): Zustand und Alarme auf dem Branch `data` (`state.json`, `alerts.json`).
 
-Kostenbremse: max. `MAX_ASSESS_PER_DAY` (Default 40) Opus-Aufrufe pro UTC-Tag, im Zustand gezählt. Fehlt `ANTHROPIC_API_KEY`, bricht der Lauf ab, ohne zu pushen.
+Kostenbremse: max. `MAX_ASSESS_PER_DAY` (Default 15) Opus-Aufrufe pro UTC-Tag, im Zustand gezählt. Fehlt `ANTHROPIC_API_KEY`, bricht der Lauf ab, ohne zu pushen.
 
 ## Konfiguration (GitHub Secrets / Variablen)
 | Name | Art | Bedeutung |
@@ -25,7 +25,7 @@ Kostenbremse: max. `MAX_ASSESS_PER_DAY` (Default 40) Opus-Aufrufe pro UTC-Tag, i
 | `ANTHROPIC_API_KEY` | Secret | API-Key von console.anthropic.com |
 | `NTFY_TOPIC` | Secret | geheimer, zufälliger Kanalname (z. B. `bigbets-7f3k9q2xw1`) – wer ihn kennt, bekommt die Pushes |
 | `ALERT_MIN_CONFIDENCE` | Variable (optional) | Schwelle 0–100, Default 75 |
-| `MAX_ASSESS_PER_DAY` | Variable (optional) | Default 40 |
+| `MAX_ASSESS_PER_DAY` | Variable (optional) | Default 15 |
 | `NTFY_SERVER` | Variable (optional) | Default `https://ntfy.sh` |
 
 ## Datenformat `alerts.json` (Branch `data`, öffentlich lesbar über raw.githubusercontent.com)
