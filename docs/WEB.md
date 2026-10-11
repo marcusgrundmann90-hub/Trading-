@@ -9,7 +9,7 @@ Ziel: Die App läuft komplett im Browser (primär Handy), ohne eigenen Server. G
 | App (statisch) | `web/` | `index.html`, `styles.css`, `app.js`, `manifest.webmanifest`, `sw.js`, `icons/`, `vendor/` |
 | Analyse-Engine (JS) | `web/lib/indicators.js`, `signals.js`, `risk.js`, `engine.js` | 1:1-Port von `backend/app/analysis/*` (gleiche Signale, Gewichte, Schwellen, deutsche Texte) |
 | Datenschicht (JS) | `web/lib/data.js`, `web/lib/demo.js` | Binance live, Aktien-Snapshot, Demo-Fallback |
-| JS-Tests | `web/tests/*.test.mjs` | `node --test web/tests/` (Node 22, keine npm-Abhängigkeiten) |
+| JS-Tests | `web/tests/*.test.mjs` | `node --test "web/tests/*.test.mjs"` (Node 22, keine npm-Abhängigkeiten) |
 | Aktien-Daten-Job | `scripts/fetch_stocks.py`, `web/data/universe.json` | holt Yahoo-Tageskerzen → `web/data/stocks.json` (nur im CI erzeugt, nicht committet) |
 | Deployment | `.github/workflows/pages.yml` | Push auf `main`, Zeitplan, manuell → Daten holen → `web/` auf GitHub Pages deployen |
 

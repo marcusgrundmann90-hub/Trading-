@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 backend/data/watchlist.json
 backend/data/*.tmp
+web/data/stocks.json
