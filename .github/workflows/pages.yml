@@ -66,6 +66,9 @@ jobs:
           mkdir -p _site
           rsync -a --delete --exclude 'tests/' --exclude 'fixtures/' --exclude '*.tmp' web/ _site/
           touch _site/.nojekyll
+          # Service-Worker-Cache pro Commit erneuern, damit Handys Updates erhalten
+          sed -i "s/^const VERSION = '.*';/const VERSION = '${GITHUB_SHA::12}';/" _site/sw.js
+          grep -q "const VERSION = '${GITHUB_SHA::12}';" _site/sw.js
           ls -la _site _site/data
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

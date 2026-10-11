@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Trading Radar</title>
+  <meta name="description" content="Trading Radar – technische Analyse für Aktien und Krypto mit Risiko-Disziplin. Läuft komplett im Browser.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0a0e16" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Radar">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script>
+    // Apply the stored theme before first paint (no flash).
+    try { var t = localStorage.getItem('tr.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  </script>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/lightweight-charts.standalone.production.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="topbar-title">
+          <svg class="brand-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8"/><path d="M6 22l6-7 5 4 9-11"/></svg>
+          <div class="topbar-text">
+            <h1 id="view-title">Radar</h1>
+            <p id="freshness" class="freshness" aria-live="polite">&nbsp;</p>
+          </div>
+        </div>
+        <span id="demo-badge" class="badge-demo" hidden title="Synthetische Daten – keine echten Kurse">Demo</span>
+        <button id="btn-refresh" class="icon-btn" type="button" aria-label="Aktualisieren" title="Aktualisieren">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="update-banner" class="update-banner" role="status" hidden>
+      <span>Neue Version verfügbar.</span>
+      <button type="button" class="btn btn-small btn-primary" id="btn-update">Neu laden</button>
+    </div>
+
+    <main id="main">
+      <!-- ============ Radar ============ -->
+      <section class="view" id="view-radar" data-view="radar" aria-labelledby="view-title">
+        <div class="filterbar" data-filter="radar">
+          <div class="seg" role="group" aria-label="Anlageklasse">
+            <button type="button" class="seg-btn" data-asset="all" aria-pressed="true">Alle</button>
+            <button type="button" class="seg-btn" data-asset="stock" aria-pressed="false">Aktien</button>
+            <button type="button" class="seg-btn" data-asset="crypto" aria-pressed="false">Krypto</button>
+          </div>
+          <div class="chips-row" role="group" aria-label="Richtung">
+            <button type="button" class="chip-toggle" data-dir="long" aria-pressed="false"><span class="dot dot-long" aria-hidden="true"></span>Long</button>
+            <button type="button" class="chip-toggle" data-dir="short" aria-pressed="false"><span class="dot dot-short" aria-hidden="true"></span>Short</button>
+          </div>
+        </div>
+        <p class="list-meta" id="radar-meta" aria-live="polite"></p>
+        <div id="radar-list" class="card-list" aria-busy="true"></div>
+        <div id="radar-empty" class="empty" hidden></div>
+        <section class="watch-section" id="radar-watch" hidden aria-labelledby="h-watch">
+          <div class="section-head">
+            <h2 id="h-watch">Beobachten</h2>
+            <span class="section-meta">neutral · kein Trade-Plan</span>
+          </div>
+          <ul id="radar-watch-list" class="row-list"></ul>
+        </section>
+        <p class="list-note" id="radar-errors" hidden></p>
+      </section>
+
+      <!-- ============ Markt ============ -->
+      <section class="view" id="view-market" data-view="market" aria-labelledby="view-title" hidden>
+        <div class="filterbar" data-filter="market">
+          <div class="seg" role="group" aria-label="Anlageklasse">
+            <button type="button" class="seg-btn" data-asset="all" aria-pressed="true">Alle</button>
+            <button type="button" class="seg-btn" data-asset="stock" aria-pressed="false">Aktien</button>
+            <button type="button" class="seg-btn" data-asset="crypto" aria-pressed="false">Krypto</button>
+          </div>
+          <div class="chips-row" role="group" aria-label="Richtung">
+            <button type="button" class="chip-toggle" data-dir="long" aria-pressed="false"><span class="dot dot-long" aria-hidden="true"></span>Long</button>
+            <button type="button" class="chip-toggle" data-dir="short" aria-pressed="false"><span class="dot dot-short" aria-hidden="true"></span>Short</button>
+          </div>
+        </div>
+        <div class="progress" id="market-progress" hidden>
+          <div class="progress-text"><span id="market-progress-text">Lade Marktdaten …</span></div>
+          <div class="progress-bar" role="progressbar" aria-labelledby="market-progress-text" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="market-progress-fill"></span></div>
+        </div>
+        <p class="list-meta" id="market-meta" aria-live="polite"></p>
+        <div id="market-list" class="card-list"></div>
+        <div id="market-empty" class="empty" hidden></div>
+        <p class="list-note" id="market-errors" hidden></p>
+      </section>
+
+      <!-- ============ Watchlist ============ -->
+      <section class="view" id="view-watchlist" data-view="watchlist" aria-labelledby="view-title" hidden>
+        <div class="panel">
+          <h2 class="panel-title">Aktie hinzufügen</h2>
+          <label class="field">
+            <span class="sr-only">Aktie suchen</span>
+            <span class="search-wrap">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+              <input id="stock-search" type="search" placeholder="Name oder Ticker, z.B. Siemens, AAPL" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+            </span>
+          </label>
+          <ul id="stock-results" class="row-list results" aria-label="Suchergebnisse" hidden></ul>
+          <p class="hint" id="stock-hint">Aktien aus DAX 40, großen US- und Europa-Werten.</p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Krypto hinzufügen</h2>
+          <form id="crypto-form" class="inline-form" novalidate>
+            <label class="field field-grow">
+              <span class="sr-only">Binance-Paar</span>
+              <input id="crypto-input" type="text" placeholder="z.B. DOGE" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="done">
+            </label>
+            <button type="submit" class="btn btn-primary" id="crypto-submit">Hinzufügen</button>
+          </form>
+          <p class="form-msg" id="crypto-msg" role="status" aria-live="polite"></p>
+        </div>
+
+        <div class="section-head">
+          <h2>Meine Watchlist</h2>
+          <span class="section-meta" id="wl-count"></span>
+        </div>
+        <ul id="wl-list" class="row-list" aria-label="Symbole in der Watchlist"></ul>
+      </section>
+
+      <!-- ============ Einstellungen ============ -->
+      <section class="view" id="view-settings" data-view="settings" aria-labelledby="view-title" hidden>
+        <div class="panel">
+          <h2 class="panel-title">Risiko</h2>
+          <label class="field">
+            <span class="field-label">Kontogröße</span>
+            <span class="input-affix">
+              <input id="in-account" type="number" inputmode="decimal" min="100" step="100">
+              <span class="affix">€</span>
+            </span>
+          </label>
+          <div class="field">
+            <label class="field-label" for="in-risk">Risiko pro Trade</label>
+            <div class="risk-row">
+              <input id="in-risk-range" type="range" min="0.25" max="3" step="0.25" aria-label="Risiko pro Trade in Prozent (Regler)">
+              <span class="input-affix input-affix-sm">
+                <input id="in-risk" type="number" inputmode="decimal" min="0.25" max="3" step="0.25">
+                <span class="affix">%</span>
+              </span>
+            </div>
+          </div>
+          <p class="risk-summary" id="risk-summary" aria-live="polite"></p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Darstellung</h2>
+          <div class="seg seg-full" role="radiogroup" aria-label="Design" id="theme-seg">
+            <button type="button" class="seg-btn" role="radio" data-theme-opt="system" aria-checked="true">System</button>
+            <button type="button" class="seg-btn" role="radio" data-theme-opt="light" aria-checked="false">Hell</button>
+            <button type="button" class="seg-btn" role="radio" data-theme-opt="dark" aria-checked="false">Dunkel</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">Daten</h2>
+          <label class="switch-row">
+            <span>
+              <span class="switch-label">Demo-Modus</span>
+              <span class="switch-sub">Synthetische Kurse statt Live-Daten – zum Ausprobieren und offline.</span>
+            </span>
+            <input type="checkbox" id="in-demo" class="switch-input" role="switch">
+          </label>
+          <dl class="kv" id="data-info"></dl>
+        </div>
+
+        <div class="panel" id="install-panel">
+          <h2 class="panel-title">App installieren</h2>
+          <div id="install-body"></div>
+        </div>
+
+        <div class="panel disclaimer-panel">
+          <h2 class="panel-title">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 16.5v.5"/></svg>
+            Keine Anlageberatung
+          </h2>
+          <p>Trading Radar zeigt Signale aus der technischen Analyse (Trend, Momentum, Volumen). Diese können falsch sein und sind keine Empfehlung zum Kauf oder Verkauf. Aktienkurse sind verzögert (Tagesdaten), Gebühren, Slippage und Steuern werden nicht berücksichtigt. Handle nur mit Geld, dessen Verlust du verkraften kannst – und immer mit Stop-Loss.</p>
+          <p class="fine">Charts: TradingView Lightweight Charts™ (Apache 2.0). Alle Daten bleiben auf deinem Gerät.</p>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav" aria-label="Hauptnavigation">
+      <button type="button" class="nav-btn" data-nav="radar" aria-current="page">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12l6.4-6.4"/><circle cx="12" cy="12" r="1" class="fill"/></svg>
+        <span>Radar</span>
+      </button>
+      <button type="button" class="nav-btn" data-nav="market">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>
+        <span>Markt</span>
+      </button>
+      <button type="button" class="nav-btn" data-nav="watchlist">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
+        <span>Watchlist</span>
+      </button>
+      <button type="button" class="nav-btn" data-nav="settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+        <span>Einstellungen</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ============ Detail sheet ============ -->
+  <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
+  <section id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="d-title" hidden>
+    <header class="sheet-head" id="sheet-head">
+      <span class="grabber" aria-hidden="true"></span>
+      <div class="sheet-head-row">
+        <button type="button" id="d-close" class="icon-btn" aria-label="Details schließen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <div class="sheet-title-wrap">
+          <div class="sheet-title-row">
+            <h2 id="d-title" class="sheet-title">–</h2>
+            <span id="d-tag" class="tag"></span>
+          </div>
+          <div class="sheet-sub-row"><span id="d-dir" class="dir-badge"></span><p id="d-name" class="sheet-sub"></p></div>
+        </div>
+        <div class="sheet-price">
+          <span id="d-price" class="num big"></span>
+          <span id="d-change" class="change"></span>
+        </div>
+      </div>
+    </header>
+    <div class="sheet-body" id="sheet-body">
+      <div id="d-error" class="banner banner-error" role="alert" hidden></div>
+      <div id="d-loading" class="sheet-loading" hidden>
+        <div class="skel skel-line"></div>
+        <div class="skel skel-chart"></div>
+        <div class="skel skel-line"></div>
+        <div class="skel skel-line short"></div>
+      </div>
+      <div id="d-content" hidden>
+        <div class="score-block" id="d-score"></div>
+        <p id="d-summary" class="d-summary"></p>
+
+        <section class="panel chart-panel" aria-label="Kurschart">
+          <div class="chart-toolbar" role="group" aria-label="Indikatoren ein-/ausblenden">
+            <button type="button" class="ind-toggle" data-ind="sma20" aria-pressed="true"><i style="--c:var(--c-sma20)"></i>SMA20</button>
+            <button type="button" class="ind-toggle" data-ind="sma50" aria-pressed="true"><i style="--c:var(--c-sma50)"></i>SMA50</button>
+            <button type="button" class="ind-toggle" data-ind="sma200" aria-pressed="true"><i style="--c:var(--c-sma200)"></i>SMA200</button>
+            <button type="button" class="ind-toggle" data-ind="bb" aria-pressed="false"><i style="--c:var(--c-bb)"></i>Bollinger</button>
+            <button type="button" class="ind-toggle" data-ind="levels" aria-pressed="true"><i style="--c:var(--accent)"></i>Level</button>
+          </div>
+          <div class="chart-legend" id="chart-legend" aria-hidden="true"></div>
+          <div class="chart chart-main" id="chart-main"></div>
+          <div class="pane-label">RSI (14)</div>
+          <div class="chart chart-sub" id="chart-rsi"></div>
+          <div class="pane-label">MACD (12, 26, 9)</div>
+          <div class="chart chart-sub chart-macd" id="chart-macd"></div>
+          <p class="chart-hint">Wischen zum Verschieben, zwei Finger zum Zoomen.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="h-plan">
+          <h3 id="h-plan" class="panel-title">Trade-Plan</h3>
+          <div id="d-plan"></div>
+        </section>
+
+        <section class="panel" aria-labelledby="h-check">
+          <h3 id="h-check" class="panel-title">Checkliste vor dem Trade <span id="check-progress" class="pill"></span></h3>
+          <ul class="checklist" id="checklist">
+            <li><label><input type="checkbox"><span><strong>Stop gesetzt?</strong> Der Stop-Loss liegt als Order im Markt – nicht nur im Kopf.</span></label></li>
+            <li><label><input type="checkbox"><span><strong>News geprüft?</strong> Keine Quartalszahlen, Notenbank-Termine oder Token-Unlocks unmittelbar bevor.</span></label></li>
+            <li><label><input type="checkbox"><span><strong>Positionsgröße korrekt?</strong> Stückzahl entspricht dem berechneten Risiko.</span></label></li>
+            <li><label><input type="checkbox"><span><strong>Nicht aus FOMO?</strong> Der Trade folgt dem Plan, nicht der Angst, etwas zu verpassen.</span></label></li>
+          </ul>
+          <p id="check-status" class="check-status" aria-live="polite"></p>
+        </section>
+
+        <section class="panel" aria-labelledby="h-signals">
+          <h3 id="h-signals" class="panel-title">Signale</h3>
+          <ul id="d-signals" class="signal-list"></ul>
+        </section>
+
+        <section class="panel" aria-labelledby="h-metrics">
+          <h3 id="h-metrics" class="panel-title">Kennzahlen</h3>
+          <table class="metrics"><tbody id="d-metrics"></tbody></table>
+          <p id="d-meta" class="fine"></p>
+        </section>
+
+        <div class="sheet-actions" id="d-actions"></div>
+        <p class="fine center">Keine Anlageberatung. Signale können falsch sein.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</body>
+</html>
