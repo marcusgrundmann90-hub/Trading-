@@ -6,9 +6,9 @@ US-Regierung lockert Krypto-Regulierung → Bitcoin ↑; überraschende Zinssenk
 Exportverbot für Chips → betroffene Halbleiter ↓. Weltweit, nicht nur USA.
 
 ## Ablauf (ein Lauf alle ~5 Minuten, GitHub Actions)
-1. **Sammeln** (`bot/feeds.py`): RSS/Atom und GDELT, nur Meldungen der letzten 6 h, die noch nicht gesehen wurden.
+1. **Sammeln** (`bot/feeds.py`): RSS/Atom und GDELT, nur Meldungen der letzten 2 h (ältere gelten als eingepreist), die noch nicht gesehen wurden.
 2. **Vorsortieren** (`bot/triage.py`): `claude-haiku-5-5`, effort `low`, strukturierte Ausgabe. Bewertet alle neuen Schlagzeilen in einem Batch
-   (0–10 „Marktrelevanz für Big Bet“). Nur ≥ 7 gehen weiter, max. 5 pro Lauf.
+   (0–10 „Marktrelevanz für Big Bet“). Nur ≥ 8 gehen weiter, max. 2 pro Lauf; schwächere werden verworfen, nicht aufgeschoben.
 3. **Bewerten** (`bot/assess.py`): `claude-opus-5-5`, effort `high`, strukturierte Ausgabe, Server-Fallbacks (`fallbacks: "default"`).
    Bekommt die Meldung, verwandte Schlagzeilen des Laufs und die Alarme der letzten 72 h (Duplikat-Erkennung: gleiches Ereignis → kein neuer Alarm,
    außer echte Eskalation/Wende). Ergebnis siehe Schema.
@@ -32,6 +32,8 @@ Kostenbremse: max. `MAX_ASSESS_PER_DAY` (Default 15) Opus-Aufrufe pro UTC-Tag, i
 ```json
 {
   "updated_at": 1760000000,
+  "usage": {"today_usd": 0.42, "month_usd": 3.10, "last30_usd": 3.10,   // geschätzt aus den Token-Zahlen
+            "assess_today": 5, "assess_max_per_day": 15, "tracked_since": "2026-10-16"},
   "alerts": [
     {
       "id": "a1b2c3d4",                     // stabil, kurz (Hash)

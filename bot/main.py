@@ -8,7 +8,7 @@ import sys
 import time
 from datetime import datetime, timezone
 
-from . import config, feeds, notify, prices, state
+from . import config, feeds, llm, notify, prices, state
 from .assess import Assessment, assess_item
 from .feeds import NewsItem
 from .triage import triage
@@ -115,9 +115,10 @@ def run(settings: config.Settings, state_dir: str, dry_run: bool = False, client
     remaining_today = max(0, settings.max_assess_per_day - state.assess_used_today(st, now))
     budget = min(config.MAX_ASSESS_PER_RUN, remaining_today)
     if len(candidates) > budget:
-        log.info("Bewertungs-Budget: %d (heute noch %d) – %d Kandidat(en) verschoben",
+        # Not queued for later: by the next run they are stale and would only burn the budget.
+        log.info("Bewertungs-Budget: %d (heute noch %d) – %d schwächere(r) Kandidat(en) verworfen",
                  budget, remaining_today, len(candidates) - budget)
-    retry_ids = {c[0].id for c in candidates[budget:]}
+    retry_ids: set[str] = set()
 
     recent = state.recent_alerts(alerts_doc, now)
     known_keys = {a.get("event_key") for a in recent if a.get("event_key")}
@@ -152,11 +153,15 @@ def run(settings: config.Settings, state_dir: str, dry_run: bool = False, client
             st["seen"][it.id] = now
             for d in it.related:
                 st["seen"][d.id] = now
+    run_cost = llm.take_run_cost()
+    state.add_cost(st, now, run_cost)
     alerts_doc["alerts"] = new_alerts + alerts_doc["alerts"]
+    usage = state.usage_summary(st, now, settings.max_assess_per_day)
     state.save_state(state_dir, st, now)
-    state.save_alerts(state_dir, alerts_doc, now)
-    log.info("Fertig: %d bewertet, %d Alarm(e), Opus heute %d/%d",
-             assessed, len(new_alerts), state.assess_used_today(st, now), settings.max_assess_per_day)
+    state.save_alerts(state_dir, alerts_doc, now, usage=usage)
+    log.info("Fertig: %d bewertet, %d Alarm(e), Opus heute %d/%d | Kosten Lauf %.4f $, heute %.2f $, Monat %.2f $",
+             assessed, len(new_alerts), state.assess_used_today(st, now), settings.max_assess_per_day,
+             run_cost, usage["today_usd"], usage["month_usd"])
     return 0
 
 

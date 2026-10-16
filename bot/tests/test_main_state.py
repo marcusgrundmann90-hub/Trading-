@@ -110,9 +110,8 @@ def test_daily_cap_and_per_run_cap(tmp_path):
     assert len(h.client.beta.messages.calls) == 1
     saved = state.load_state(tmp_path)
     assert saved["assess_count"][state.utc_date(NOW)] == 40
-    # deferred candidates are not marked seen, so they get another chance
-    assert "id0" in saved["seen"] or "id1" in saved["seen"]
-    assert len([i for i in ("id0", "id1", "id2") if i not in saved["seen"]]) == 2
+    # candidates beyond the budget are dropped (marked seen), not queued: they would be stale next run
+    assert all(i in saved["seen"] for i in ("id0", "id1", "id2"))
 
     h2 = Harness([make_item(9, title="another fresh item here")], [hits(("h0", 9))], [])
     h2.run(tmp_path)
@@ -186,3 +185,31 @@ def test_alerts_capped_and_sorted(tmp_path):
     assert len(doc["alerts"]) == config.ALERTS_MAX
     assert doc["alerts"][0]["id"] == "0"
     assert doc["updated_at"] == NOW
+
+
+def test_costs_are_tracked_and_published(tmp_path):
+    from types import SimpleNamespace
+    usage_t = SimpleNamespace(input_tokens=10_000, output_tokens=1_000,
+                              cache_creation_input_tokens=0, cache_read_input_tokens=0)
+    usage_a = SimpleNamespace(input_tokens=3_000, output_tokens=5_000,
+                              cache_creation_input_tokens=2_000, cache_read_input_tokens=0)
+    triage_resp = hits(("h0", 9))
+    triage_resp.model, triage_resp.usage = "claude-haiku-5-5", usage_t
+    h = Harness([make_item(0, title="Alpha strike on refinery")], [triage_resp],
+                [resp(make_assessment(is_big_bet=False), model="claude-opus-5-5", usage=usage_a)])
+    h.run(tmp_path)
+    expected = (10_000 * 0.10 + 1_000 * 0.50) / 1e6 + (3_000 * 4 + 2_000 * 4 * 1.25 + 5_000 * 20) / 1e6
+    saved = state.load_state(tmp_path)
+    assert abs(saved["costs"][state.utc_date(NOW)] - expected) < 1e-9
+    doc = json.loads((tmp_path / "alerts.json").read_text(encoding="utf-8"))
+    assert abs(doc["usage"]["today_usd"] - round(expected, 4)) < 1e-9
+    assert doc["usage"]["assess_today"] == 1
+    assert doc["usage"]["assess_max_per_day"] == 40
+
+
+def test_cost_of_unknown_model_uses_conservative_price():
+    from types import SimpleNamespace
+    from bot import llm
+    u = SimpleNamespace(input_tokens=1_000_000, output_tokens=0)
+    assert llm.cost_of("claude-opus-5-5", u) == 4.0
+    assert llm.cost_of("some-future-model", u) == 5.0
