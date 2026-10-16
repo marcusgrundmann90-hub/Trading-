@@ -19,7 +19,7 @@ const DATA_URL = (() => {
 
 const $ = (id) => document.getElementById(id);
 const els = {
-  status: $('status'), refresh: $('refresh'), notice: $('notice'), list: $('list'),
+  status: $('status'), refresh: $('refresh'), notice: $('notice'), usage: $('usage'), usageText: $('usage-text'), list: $('list'),
   empty: $('empty'), error: $('error'), toast: $('toast'),
 };
 
@@ -99,7 +99,14 @@ function normalize(raw) {
   if (!raw || typeof raw !== 'object') throw new Error('Ungültige Daten');
   const alerts = Array.isArray(raw.alerts) ? raw.alerts.filter((a) => a && typeof a === 'object' && a.id) : [];
   alerts.sort((a, b) => (Number(b.created_at) || 0) - (Number(a.created_at) || 0));
-  return { updated_at: Number(raw.updated_at) || 0, alerts };
+  const u = raw.usage && typeof raw.usage === 'object' ? raw.usage : null;
+  const usage = u ? {
+    today: Number(u.today_usd) || 0,
+    month: Number(u.month_usd) || 0,
+    assessToday: Number(u.assess_today) || 0,
+    assessMax: Number(u.assess_max_per_day) || 0,
+  } : null;
+  return { updated_at: Number(raw.updated_at) || 0, alerts, usage };
 }
 
 function readCache() {
@@ -168,6 +175,21 @@ function renderStatus() {
     text += ' · Wächter läuft evtl. nicht';
   }
   s.textContent = text;
+}
+
+const usdFmt = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const monthFmt = new Intl.DateTimeFormat('de-DE', { month: 'long', timeZone: 'UTC' });
+
+function renderUsage() {
+  const u = state.data && state.data.usage;
+  if (!u) { els.usage.hidden = true; return; }
+  const parts = [
+    `heute ${usdFmt.format(u.today)}`,
+    `${monthFmt.format(new Date())} ${usdFmt.format(u.month)}`,
+  ];
+  if (u.assessMax) parts.push(`Prüfungen heute ${u.assessToday}/${u.assessMax}`);
+  els.usageText.textContent = parts.join(' · ');
+  els.usage.hidden = false;
 }
 
 function renderNotice() {
@@ -325,6 +347,7 @@ function renderCard(al) {
 function render() {
   renderStatus();
   renderNotice();
+  renderUsage();
   const data = state.data;
   els.error.hidden = !!data || state.loading;
   if (!data) {

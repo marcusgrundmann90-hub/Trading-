@@ -11,7 +11,7 @@ from pydantic import BaseModel, ValidationError
 
 from . import config
 from .feeds import NewsItem
-from .llm import describe_error
+from .llm import describe_error, record_usage
 
 log = logging.getLogger(__name__)
 
@@ -177,6 +177,7 @@ def assess_item(client: anthropic.Anthropic, item: NewsItem, triage_score: int, 
         log.warning("Bewertung: Antwort nicht lesbar – übersprungen")
         return "unparsed", None
 
+    record_usage(resp, config.ASSESS_MODEL)
     if resp.stop_reason == "refusal":
         log.warning("Bewertung abgelehnt (refusal) – übersprungen")
         return "refusal", None

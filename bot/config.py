@@ -13,14 +13,15 @@ ASSESS_MODEL = "claude-opus-5-5"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
 # --- Pipeline limits ----------------------------------------------------------
-MAX_AGE_HOURS = 6            # only news from the last 6 h
+MAX_AGE_HOURS = 2            # only news from the last 2 h (older is priced in)
 SEEN_TTL_HOURS = 72          # forget seen ids after 72 h
 RECENT_ALERTS_HOURS = 72     # alerts shown to the assessor for dedupe
-TRIAGE_MIN_SCORE = 7
-MAX_ASSESS_PER_RUN = 5
+TRIAGE_MIN_SCORE = 8
+MAX_ASSESS_PER_RUN = 2
 TRIAGE_BATCH_SIZE = 150      # headlines per Haiku call
 MAX_TRIAGE_PER_RUN = 900     # hard cap on headlines per run (newest first)
 ALERTS_MAX = 200
+COST_DAYS_KEPT = 62          # daily cost history kept in state
 FEED_TIMEOUT_S = 10.0
 SUMMARY_MAX_CHARS = 500
 ONE_LINER_MAX_CHARS = 110    # prompt asks for <= 90; hard cut as safety net

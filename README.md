@@ -47,6 +47,9 @@ Unter *Settings → Secrets and variables → Actions → Variables*:
   - Eine gründliche Prüfung: etwa 0,10 $.
   - Mit dem Default-Limit von 15 Prüfungen pro Tag sind das höchstens etwa 1,70 $ pro Tag (rund 50 $ im Monat). An ruhigen Tagen ist es deutlich weniger.
   - Setz in der Anthropic-Konsole zusätzlich ein Monatslimit.
+- **Verbrauch ansehen:**
+  - In der App unten unter „API-Kosten (geschätzt)“: heute, laufender Monat und Prüfungen heute. Das ist eine Schätzung aus den Token-Zahlen jedes Aufrufs.
+  - Exakt in der Anthropic-Konsole unter *Usage* bzw. *Cost*.
 
 ## Grenzen
 - GitHub startet zeitgesteuerte Läufe oft mit einigen Minuten Verspätung. Der Wächter ist für Trades mit **Tagen bis Wochen Horizont** gedacht, nicht für Sekunden-Reaktionen.

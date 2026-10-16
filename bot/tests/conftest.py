@@ -76,8 +76,8 @@ class FakeClient:
         self.beta = SimpleNamespace(messages=_Endpoint(assess))
 
 
-def resp(parsed=None, stop_reason="end_turn"):
-    return SimpleNamespace(stop_reason=stop_reason, parsed_output=parsed, content=[])
+def resp(parsed=None, stop_reason="end_turn", model=None, usage=None):
+    return SimpleNamespace(stop_reason=stop_reason, parsed_output=parsed, content=[], model=model, usage=usage)
 
 
 @pytest.fixture
