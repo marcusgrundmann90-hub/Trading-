@@ -1,0 +1,102 @@
+name: Big Bets
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      test_push:
+        description: "Nur eine Test-Benachrichtigung senden"
+        type: boolean
+        default: false
+
+concurrency:
+  group: bigbets
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_SERVER: ${{ vars.NTFY_SERVER }}
+      ALERT_MIN_CONFIDENCE: ${{ vars.ALERT_MIN_CONFIDENCE }}
+      MAX_ASSESS_PER_DAY: ${{ vars.MAX_ASSESS_PER_DAY }}
+      TEST_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.test_push && 'true' || 'false' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: bot/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r bot/requirements.txt
+
+      - name: Check secrets
+        run: |
+          missing=""
+          [ -n "$NTFY_TOPIC" ] || missing="$missing NTFY_TOPIC"
+          if [ "$TEST_PUSH" != "true" ]; then
+            [ -n "$ANTHROPIC_API_KEY" ] || missing="$missing ANTHROPIC_API_KEY"
+          fi
+          if [ -n "$missing" ]; then
+            if [ "${{ github.event_name }}" = "schedule" ]; then
+              # Zeitgesteuert still überspringen, damit keine Fehler-Mails im 5-Minuten-Takt entstehen
+              echo "::warning title=Secrets fehlen::Wächter pausiert, bitte anlegen:$missing"
+              echo "SKIP_RUN=true" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "::error title=Secrets fehlen::Bitte unter Settings → Secrets and variables → Actions anlegen:$missing"
+            exit 1
+          fi
+
+      - name: Send test push
+        if: env.TEST_PUSH == 'true' && env.SKIP_RUN != 'true'
+        run: python -m bot.main --test-push
+
+      - name: Load state from data branch
+        if: env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true'
+        run: |
+          mkdir -p state
+          if git fetch --quiet --depth=1 origin data 2>/dev/null; then
+            for f in state.json alerts.json; do
+              if git show "FETCH_HEAD:$f" > "state/$f.tmp" 2>/dev/null; then
+                mv "state/$f.tmp" "state/$f"
+              else
+                rm -f "state/$f.tmp"
+              fi
+            done
+            echo "Zustand vom Branch data geladen."
+          else
+            echo "Branch data existiert noch nicht – starte mit leerem Zustand."
+          fi
+
+      - name: Run Big Bets bot
+        if: env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true'
+        run: python -m bot.main --state-dir state
+
+      - name: Publish state (single orphan commit on data)
+        if: env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true'
+        env:
+          GIT_AUTHOR_NAME: github-actions[bot]
+          GIT_AUTHOR_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          test -s state/state.json && test -s state/alerts.json
+          state_blob=$(git hash-object -w state/state.json)
+          alerts_blob=$(git hash-object -w state/alerts.json)
+          tree=$(printf '100644 blob %s\talerts.json\n100644 blob %s\tstate.json\n' "$alerts_blob" "$state_blob" | git mktree)
+          commit=$(git commit-tree "$tree" -m "Big-Bets-Zustand $(date -u +%Y-%m-%dT%H:%MZ)")
+          git push --force --quiet origin "$commit:refs/heads/data"
+          echo "Branch data aktualisiert ($commit)."

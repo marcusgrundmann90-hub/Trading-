@@ -1,25 +1,21 @@
 {
   "id": "./",
-  "name": "Trading Radar",
-  "short_name": "Radar",
-  "description": "Technische Analyse für Aktien und Krypto mit Risiko-Disziplin – läuft komplett im Browser.",
+  "name": "Big Bets",
+  "short_name": "Big Bets",
+  "description": "Seltene, marktbewegende Nachrichten als Einzeiler – mit Begründung, Risiken und Quellen.",
   "lang": "de-DE",
   "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0e16",
-  "theme_color": "#0a0e16",
-  "categories": ["finance", "productivity"],
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "categories": ["finance", "news"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
-  ],
-  "shortcuts": [
-    { "name": "Markt-Scan", "short_name": "Markt", "url": "./#market", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Watchlist", "url": "./#watchlist", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
