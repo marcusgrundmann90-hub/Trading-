@@ -1,8 +1,12 @@
 name: Big Bets
 
+# GitHub führt sehr häufige Zeitpläne (*/5) oft gar nicht aus. Deshalb läuft ein Job
+# ~50 Minuten lang und prüft intern alle 5 Minuten. Am Ende startet er sich selbst neu
+# (workflow_dispatch). Der stündliche Zeitplan ist nur das Sicherheitsnetz, falls die
+# Kette einmal reißt. Stoppen: Actions → Big Bets → ⋯ → Disable workflow.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "23 * * * *"
   workflow_dispatch:
     inputs:
       test_push:
@@ -16,11 +20,12 @@ concurrency:
 
 permissions:
   contents: write
+  actions: write   # zum Selbst-Neustart per workflow_dispatch
 
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 75
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
@@ -28,6 +33,8 @@ jobs:
       ALERT_MIN_CONFIDENCE: ${{ vars.ALERT_MIN_CONFIDENCE }}
       MAX_ASSESS_PER_DAY: ${{ vars.MAX_ASSESS_PER_DAY }}
       TEST_PUSH: ${{ github.event_name == 'workflow_dispatch' && inputs.test_push && 'true' || 'false' }}
+      LOOP_MINUTES: "50"
+      INTERVAL_SECONDS: "300"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,11 +88,7 @@ jobs:
             echo "Branch data existiert noch nicht – starte mit leerem Zustand."
           fi
 
-      - name: Run Big Bets bot
-        if: env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true'
-        run: python -m bot.main --state-dir state
-
-      - name: Publish state (single orphan commit on data)
+      - name: Run Big Bets bot (loop, every 5 minutes)
         if: env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true'
         env:
           GIT_AUTHOR_NAME: github-actions[bot]
@@ -93,10 +96,32 @@ jobs:
           GIT_COMMITTER_NAME: github-actions[bot]
           GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
         run: |
-          test -s state/state.json && test -s state/alerts.json
-          state_blob=$(git hash-object -w state/state.json)
-          alerts_blob=$(git hash-object -w state/alerts.json)
-          tree=$(printf '100644 blob %s\talerts.json\n100644 blob %s\tstate.json\n' "$alerts_blob" "$state_blob" | git mktree)
-          commit=$(git commit-tree "$tree" -m "Big-Bets-Zustand $(date -u +%Y-%m-%dT%H:%MZ)")
-          git push --force --quiet origin "$commit:refs/heads/data"
-          echo "Branch data aktualisiert ($commit)."
+          publish() {
+            # Zustand als einzelner, überschriebener Commit auf dem Branch data
+            test -s state/state.json && test -s state/alerts.json || return 0
+            state_blob=$(git hash-object -w state/state.json)
+            alerts_blob=$(git hash-object -w state/alerts.json)
+            tree=$(printf '100644 blob %s\talerts.json\n100644 blob %s\tstate.json\n' "$alerts_blob" "$state_blob" | git mktree)
+            commit=$(git commit-tree "$tree" -m "Big-Bets-Zustand $(date -u +%Y-%m-%dT%H:%MZ)")
+            if git push --force --quiet origin "$commit:refs/heads/data"; then
+              echo "Branch data aktualisiert ($commit)."
+            else
+              echo "::warning::Zustand konnte nicht gespeichert werden"
+            fi
+          }
+          end=$(( $(date +%s) + LOOP_MINUTES * 60 ))
+          while :; do
+            started=$(date +%s)
+            python -m bot.main --state-dir state || echo "::warning::Lauf mit Fehler beendet (exit $?)"
+            publish
+            next=$(( started + INTERVAL_SECONDS ))
+            [ "$next" -ge "$end" ] && break
+            now=$(date +%s)
+            [ "$next" -gt "$now" ] && sleep $(( next - now ))
+          done
+
+      - name: Restart for the next round
+        if: ${{ !cancelled() && env.TEST_PUSH != 'true' && env.SKIP_RUN != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run bigbets.yml --ref "${GITHUB_REF_NAME}" -f test_push=false
