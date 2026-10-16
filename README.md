@@ -52,7 +52,8 @@ Unter *Settings → Secrets and variables → Actions → Variables*:
   - Exakt in der Anthropic-Konsole unter *Usage* bzw. *Cost*.
 
 ## Grenzen
-- GitHub startet zeitgesteuerte Läufe oft mit einigen Minuten Verspätung. Der Wächter ist für Trades mit **Tagen bis Wochen Horizont** gedacht, nicht für Sekunden-Reaktionen.
+- **So läuft der Wächter dauerhaft:** GitHub führt sehr häufige Zeitpläne oft gar nicht aus. Deshalb prüft ein Job etwa 50 Minuten lang alle 5 Minuten und startet sich dann selbst neu. Ein stündlicher Zeitplan springt ein, falls die Kette einmal reißt. Der Wächter ist für Trades mit **Tagen bis Wochen Horizont** gedacht, nicht für Sekunden-Reaktionen.
+- **Wächter anhalten:** *Actions → Big Bets → ⋯ → Disable workflow*. Wieder einschalten mit *Enable workflow*, dann einmal *Run workflow*.
 - Bei öffentlichen Repos pausiert GitHub Zeitpläne nach 60 Tagen ohne Commit auf `main`. Dann unter *Actions* den Workflow wieder aktivieren.
 - Die Mini-App zeigt oben „Letzter Check vor X Min.“. Steht dort länger als 30 Minuten nichts Neues, läuft der Wächter vermutlich nicht.
 
