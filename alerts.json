@@ -1,0 +1,12 @@
+{
+ "updated_at": 1792834129,
+ "alerts": [],
+ "usage": {
+  "today_usd": 0.1202,
+  "month_usd": 3.0032,
+  "last30_usd": 3.0032,
+  "assess_today": 4,
+  "assess_max_per_day": 15,
+  "tracked_since": "2026-10-16"
+ }
+}
