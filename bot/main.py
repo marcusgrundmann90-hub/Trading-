@@ -31,6 +31,21 @@ def should_alert(a: Assessment, min_confidence: int, known_keys: set[str]) -> tu
     return True, "ok"
 
 
+def classify(a: Assessment, settings: config.Settings, known_big: set[str], known_all: set[str]) -> tuple[str | None, str]:
+    """Return ("big" | "watch" | None, reason)."""
+    ok, why = should_alert(a, settings.alert_min_confidence, known_big)
+    if ok:
+        return "big", "ok"
+    watch_min = settings.watch_min_confidence
+    if watch_min >= settings.alert_min_confidence or a.confidence < watch_min or a.confidence >= settings.alert_min_confidence and a.is_big_bet:
+        return None, why
+    if not a.assets or a.priced_in == "weitgehend":
+        return None, why
+    if a.event_key in known_all or (a.duplicate_of_event_key and a.duplicate_of_event_key in known_all):
+        return None, f"schon gemeldet ({a.duplicate_of_event_key or a.event_key})"
+    return "watch", f"Beobachten (Konfidenz {a.confidence})"
+
+
 def unique_event_key(key: str, known_keys: set[str]) -> str:
     key = key or "ereignis"
     if key not in known_keys:
@@ -41,9 +56,15 @@ def unique_event_key(key: str, known_keys: set[str]) -> str:
     return f"{key}-e{n}"
 
 
-def build_alert(a: Assessment, item: NewsItem, related: list[NewsItem], now: int, event_key: str) -> dict:
+def build_alert(a: Assessment, item: NewsItem, related: list[NewsItem], now: int, event_key: str,
+                level: str = "big", earlier: list[dict] | None = None) -> dict:
     alert_id = hashlib.sha1(f"{event_key}|{now}|{item.id}".encode("utf-8")).hexdigest()[:8]
     sources = [item.as_source()]
+    for src in earlier or []:
+        if len(sources) >= 4:
+            break
+        if src.get("url") not in {s["url"] for s in sources}:
+            sources.append(src)
     for r in related:
         if len(sources) >= 4:
             break
@@ -52,6 +73,7 @@ def build_alert(a: Assessment, item: NewsItem, related: list[NewsItem], now: int
     return {
         "id": alert_id,
         "created_at": now,
+        "level": "watch" if level == "watch" else "big",
         "event_key": event_key,
         "headline": a.headline,
         "one_liner": a.one_liner,
@@ -102,50 +124,92 @@ def run(settings: config.Settings, state_dir: str, dry_run: bool = False, client
         from .llm import make_client
         client = make_client(settings.anthropic_api_key)
 
-    # 2. Triage
+    # 2. Triage (also matches new coverage of events awaiting confirmation)
+    pending = state.active_pending(st, now)
+    pending_heads = {k: v.get("headline", k) for k, v in pending.items()}
     if to_triage:
-        outcome = triage(client, to_triage, now)
-        candidates, triaged_ids = outcome.candidates, outcome.triaged_ids
-        log.info("Triage: %d Aufruf(e), %d fehlgeschlagen, Kandidaten ≥%d: %d",
-                 outcome.calls, outcome.failed_batches, config.TRIAGE_MIN_SCORE, len(candidates))
+        outcome = triage(client, to_triage, now, pending=pending_heads)
+        candidates, triaged_ids, matches = outcome.candidates, outcome.triaged_ids, outcome.pending_matches
+        log.info("Triage: %d Aufruf(e), %d fehlgeschlagen, Kandidaten ≥%d: %d, Bestätigungs-Treffer: %d (offen: %d)",
+                 outcome.calls, outcome.failed_batches, config.TRIAGE_MIN_SCORE, len(candidates),
+                 sum(len(v) for v in matches.values()), len(pending))
     else:
-        candidates, triaged_ids = [], set()
+        candidates, triaged_ids, matches = [], set(), {}
 
-    # 3. Assess (daily and per-run caps)
+    # Re-checks: a watched event gets a new Opus look only if a new outlet reports on it.
+    rechecks = []
+    for key, items in matches.items():
+        entry = pending.get(key)
+        if not entry:
+            continue
+        known_outlets = {x.get("source") for x in entry.get("sources", [])}
+        new_items = [it for it in items if it.source not in known_outlets]
+        if not new_items:
+            state.remember_pending(st, key, entry.get("headline", key), int(entry.get("confidence", 0)),
+                                   [it.as_source() for it in items], now)
+            continue
+        newest = max(new_items, key=lambda it: it.published)
+        rechecks.append((key, newest, items, list(entry.get("sources", []))))
+
+    # 3. Assess (daily and per-run caps); re-checks of watched events first
     remaining_today = max(0, settings.max_assess_per_day - state.assess_used_today(st, now))
     budget = min(config.MAX_ASSESS_PER_RUN, remaining_today)
-    if len(candidates) > budget:
+    jobs = [("recheck", key, it, 10, "Neue Berichte zu einem Ereignis, das auf Bestätigung wartet", items, earlier)
+            for key, it, items, earlier in rechecks]
+    jobs += [("new", None, it, score, reason, [], None) for it, score, reason in candidates]
+    if len(jobs) > budget:
         # Not queued for later: by the next run they are stale and would only burn the budget.
         log.info("Bewertungs-Budget: %d (heute noch %d) – %d schwächere(r) Kandidat(en) verworfen",
-                 budget, remaining_today, len(candidates) - budget)
+                 budget, remaining_today, len(jobs) - budget)
     retry_ids: set[str] = set()
 
     recent = state.recent_alerts(alerts_doc, now)
-    known_keys = {a.get("event_key") for a in recent if a.get("event_key")}
+    known_all = {a.get("event_key") for a in recent if a.get("event_key")}
+    known_big = {a.get("event_key") for a in recent if a.get("event_key") and a.get("level") != "watch"}
     new_alerts: list[dict] = []
     assessed = 0
-    for item, score, reason in candidates[:budget]:
+    for kind, pkey, item, score, reason, extra, earlier in jobs[:budget]:
         related = feeds.related_headlines(item, unique)
+        for it in extra:
+            if it.id != item.id and it not in related:
+                related.append(it)
         state.count_assess(st, now)
         assessed += 1
-        status, a = assess_item(client, item, score, reason, related, recent + new_alerts, now)
+        status, a = assess_item(client, item, score, reason, related, recent + new_alerts, now, earlier=earlier)
         if status == "error":
             retry_ids.add(item.id)  # transient: try again next run
             continue
         if a is None:
             continue
-        ok, why = should_alert(a, settings.alert_min_confidence, known_keys)
-        log.info("Bewertet: %s → big_bet=%s konf=%d (%s)", a.event_key, a.is_big_bet, a.confidence,
-                 why if ok else (why + ("; " + a.rejection_reason if a.rejection_reason else "")))
-        if not ok:
+        level, why = classify(a, settings, known_big, known_all)
+        tag = "Nachprüfung" if kind == "recheck" else "Bewertet"
+        log.info("%s: %s → big_bet=%s konf=%d warten=%s (%s)", tag, a.event_key, a.is_big_bet, a.confidence,
+                 a.awaiting_confirmation,
+                 why if level else (why + ("; " + a.rejection_reason if a.rejection_reason else "")))
+
+        # Watch the event until it is confirmed (or give up after a few re-checks / 12 h).
+        watch_key = pkey or a.event_key
+        if level == "big":
+            state.drop_pending(st, watch_key)
+        elif a.awaiting_confirmation and a.confidence >= config.PENDING_MIN_CONFIDENCE:
+            srcs = [x.as_source() for x in [item] + list(extra)]
+            state.remember_pending(st, watch_key, a.headline, a.confidence, srcs, now, recheck=kind == "recheck")
+            log.info("Wartet auf Bestätigung: %s", watch_key)
+        elif kind == "recheck":
+            state.drop_pending(st, watch_key)
+
+        if not level:
             continue
-        event_key = unique_event_key(a.event_key, known_keys)
-        alert = build_alert(a, item, related, now, event_key)
+        event_key = unique_event_key(a.event_key, known_big if level == "big" else known_all)
+        alert = build_alert(a, item, related, now, event_key, level=level, earlier=earlier)
         price_fn(alert["assets"])
         pushed = send_fn(alert, settings.ntfy_topic, settings.ntfy_server, settings.app_url)
-        log.info("ALARM %s: %s (Push %s)", alert["id"], alert["one_liner"], "ok" if pushed else "FEHLGESCHLAGEN")
+        log.info("%s %s: %s (Push %s)", "ALARM" if level == "big" else "BEOBACHTEN", alert["id"],
+                 alert["one_liner"], "ok" if pushed else "FEHLGESCHLAGEN")
         new_alerts.append(alert)
-        known_keys.add(event_key)
+        known_all.add(event_key)
+        if level == "big":
+            known_big.add(event_key)
 
     # 4. Persist
     for it in to_triage:

@@ -37,7 +37,14 @@ Unter *Settings → Secrets and variables → Actions → Variables*:
 | Variable | Default | Bedeutung |
 |---|---|---|
 | `ALERT_MIN_CONFIDENCE` | 75 | Ab welcher Konfidenz (0–100) gepusht wird. Höher = seltener, aber treffsicherer. |
+| `WATCH_MIN_CONFIDENCE` | 60 | Ab dieser Konfidenz kommt ein leiser Push „Beobachten“ für mögliche, noch unsichere Ereignisse. Auf 100 setzen, um die Stufe abzuschalten. |
 | `MAX_ASSESS_PER_DAY` | 15 | Maximale Zahl gründlicher Prüfungen durch Claude Opus pro Tag. Das ist die wichtigste Kostenbremse. |
+
+## Zwei Alarm-Stufen
+- **Big Bet** (Konfidenz ab 75): dringende Push-Nachricht. Das Ereignis ist neu, bestätigt und hat eine klare Wirkung auf den Markt.
+- **Beobachten** (Konfidenz 60–74): leiser Push mit „Beobachten:“ im Titel und 👀. Es ist möglicherweise wichtig, aber noch unsicher. Erst handeln, wenn es sich bestätigt.
+- **Auf Bestätigung warten:** Meldet nur eine Quelle etwas Großes, merkt sich der Wächter das Ereignis bis zu 12 Stunden. Sobald ein weiteres Medium darüber berichtet, prüft er es erneut, höchstens 3-mal. Bestätigt es sich, kommt der Big-Bet-Alarm.
+- **Was als bestätigt gilt:** eine offizielle Stelle, eine große Nachrichtenagentur (Reuters, AP, Bloomberg …) oder mindestens drei unabhängige Medien.
 
 ## Kosten
 - **GitHub:** kostenlos (öffentliches Repo).
@@ -52,7 +59,8 @@ Unter *Settings → Secrets and variables → Actions → Variables*:
   - Exakt in der Anthropic-Konsole unter *Usage* bzw. *Cost*.
 
 ## Grenzen
-- GitHub startet zeitgesteuerte Läufe oft mit einigen Minuten Verspätung. Der Wächter ist für Trades mit **Tagen bis Wochen Horizont** gedacht, nicht für Sekunden-Reaktionen.
+- **So läuft der Wächter dauerhaft:** GitHub führt sehr häufige Zeitpläne oft gar nicht aus. Deshalb prüft ein Job etwa 50 Minuten lang alle 5 Minuten und startet sich dann selbst neu. Ein stündlicher Zeitplan springt ein, falls die Kette einmal reißt. Der Wächter ist für Trades mit **Tagen bis Wochen Horizont** gedacht, nicht für Sekunden-Reaktionen.
+- **Wächter anhalten:** *Actions → Big Bets → ⋯ → Disable workflow*. Wieder einschalten mit *Enable workflow*, dann einmal *Run workflow*.
 - Bei öffentlichen Repos pausiert GitHub Zeitpläne nach 60 Tagen ohne Commit auf `main`. Dann unter *Actions* den Workflow wieder aktivieren.
 - Die Mini-App zeigt oben „Letzter Check vor X Min.“. Steht dort länger als 30 Minuten nichts Neues, läuft der Wächter vermutlich nicht.
 

@@ -30,6 +30,7 @@ def make_assessment(**kw) -> Assessment:
         assets=[AssetCall(name="Brent-Öl", ticker="BZ=F", direction="long", conviction=9)],
         second_order=["Tanker-Reedereien ↑", "Airlines ↓"],
         horizon="Tage",
+        awaiting_confirmation=False,
         confidence=82,
         is_big_bet=True,
         one_liner="🛢️ LONG Öl (Brent) · Angriff auf Ras Tanura · hoch · Tage",

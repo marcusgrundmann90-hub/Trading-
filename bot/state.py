@@ -42,7 +42,7 @@ def _write_json(path: Path, data: dict) -> None:
 
 
 def empty_state() -> dict:
-    return {"seen": {}, "assess_count": {}, "costs": {}, "last_run": 0}
+    return {"seen": {}, "assess_count": {}, "costs": {}, "pending": {}, "last_run": 0}
 
 
 def load_state(state_dir: str | Path) -> dict:
@@ -54,6 +54,8 @@ def load_state(state_dir: str | Path) -> dict:
         st["assess_count"] = {str(k): int(v) for k, v in data["assess_count"].items() if isinstance(v, (int, float))}
     if isinstance(data.get("costs"), dict):
         st["costs"] = {str(k): float(v) for k, v in data["costs"].items() if isinstance(v, (int, float))}
+    if isinstance(data.get("pending"), dict):
+        st["pending"] = {str(k): v for k, v in data["pending"].items() if isinstance(v, dict)}
     st["last_run"] = int(data.get("last_run") or 0)
     return st
 
@@ -65,7 +67,41 @@ def prune_state(st: dict, now: int) -> dict:
     st["assess_count"] = {k: v for k, v in st["assess_count"].items() if k in keep_days}
     cost_cutoff = utc_date(now - config.COST_DAYS_KEPT * 86400)
     st["costs"] = {k: v for k, v in st.get("costs", {}).items() if k > cost_cutoff}
+    st["pending"] = active_pending(st, now)
     return st
+
+
+# --- events awaiting confirmation ---------------------------------------------
+
+def active_pending(st: dict, now: int) -> dict:
+    cutoff = now - config.PENDING_HOURS * 3600
+    return {k: v for k, v in (st.get("pending") or {}).items()
+            if int(v.get("first_seen", 0)) >= cutoff and int(v.get("rechecks", 0)) < config.PENDING_MAX_RECHECKS}
+
+
+def remember_pending(st: dict, key: str, headline: str, confidence: int, sources: list[dict], now: int,
+                     recheck: bool = False) -> None:
+    pend = st.setdefault("pending", {})
+    entry = pend.get(key) or {"first_seen": now, "rechecks": 0, "sources": []}
+    entry["headline"] = headline
+    entry["confidence"] = int(confidence)
+    entry["last_checked"] = now
+    if recheck:
+        entry["rechecks"] = int(entry.get("rechecks", 0)) + 1
+    known = {x.get("url") for x in entry["sources"]}
+    for src in sources:
+        if src.get("url") not in known:
+            entry["sources"].append(src)
+            known.add(src.get("url"))
+    entry["sources"] = entry["sources"][-12:]
+    pend[key] = entry
+    if len(pend) > config.PENDING_MAX:  # drop the oldest
+        for k in sorted(pend, key=lambda k: int(pend[k].get("first_seen", 0)))[: len(pend) - config.PENDING_MAX]:
+            pend.pop(k, None)
+
+
+def drop_pending(st: dict, key: str) -> None:
+    (st.get("pending") or {}).pop(key, None)
 
 
 def save_state(state_dir: str | Path, st: dict, now: int) -> None:
