@@ -22,6 +22,12 @@ TRIAGE_BATCH_SIZE = 150      # headlines per Haiku call
 MAX_TRIAGE_PER_RUN = 900     # hard cap on headlines per run (newest first)
 ALERTS_MAX = 200
 COST_DAYS_KEPT = 62          # daily cost history kept in state
+# Events that would qualify but still lack confirmation are re-checked when more
+# outlets report on them (instead of being forgotten after one rejection).
+PENDING_HOURS = 12           # how long an unconfirmed event is watched
+PENDING_MAX = 10             # max events watched at once
+PENDING_MAX_RECHECKS = 3     # max Opus re-checks per watched event
+PENDING_MIN_CONFIDENCE = 30  # below this an unconfirmed event is not watched
 FEED_TIMEOUT_S = 10.0
 SUMMARY_MAX_CHARS = 500
 ONE_LINER_MAX_CHARS = 110    # prompt asks for <= 90; hard cut as safety net
@@ -67,6 +73,14 @@ FEEDS: list[tuple[str, str]] = [
         '(default OR bailout OR "bank run" OR "capital controls" OR "debt crisis" OR nationalization)')),
     ("Google News: Krieg/Putsch", _gnews_search(
         '(coup OR invasion OR "declares war" OR mobilization OR ceasefire OR blockade)')),
+    # Top-tier wires: their articles rarely appear in topic feeds, but they are
+    # what turns a single claim into a confirmed event.
+    ("Google News: Agenturen Wirtschaft", _gnews_search(
+        '(site:reuters.com OR site:apnews.com OR site:bloomberg.com OR site:ft.com OR site:wsj.com) '
+        '(attack OR strike OR sanctions OR OPEC OR "central bank" OR crypto OR tariffs OR default OR embargo OR blockade)')),
+    ("Google News: Agenturen Welt", _gnews_search(
+        '(site:reuters.com OR site:apnews.com OR site:afp.com OR site:bbc.com) '
+        '(Iran OR Israel OR Saudi OR Houthi OR Russia OR Ukraine OR China OR Taiwan OR Venezuela OR OPEC)')),
     ("Google News: Schlagzeilen DE", _gnews_search(
         '(Angriff OR Sanktionen OR Zinsentscheid OR Exportverbot OR Embargo OR Ölpreis OR Staatspleite)', lang="de")),
     # Topic feeds
@@ -114,6 +128,7 @@ class Settings:
     ntfy_server: str = "https://ntfy.sh"
     alert_min_confidence: int = 75
     max_assess_per_day: int = 15
+    watch_min_confidence: int = 60
     app_url: str = APP_URL
     feeds: list[tuple[str, str]] = field(default_factory=lambda: list(FEEDS))
 
@@ -126,5 +141,6 @@ class Settings:
             ntfy_server=server.rstrip("/"),
             alert_min_confidence=max(0, min(100, _env_int("ALERT_MIN_CONFIDENCE", 75))),
             max_assess_per_day=max(0, _env_int("MAX_ASSESS_PER_DAY", 15)),
+            watch_min_confidence=max(0, min(100, _env_int("WATCH_MIN_CONFIDENCE", 60))),
             app_url=(os.environ.get("APP_URL") or "").strip() or APP_URL,
         )

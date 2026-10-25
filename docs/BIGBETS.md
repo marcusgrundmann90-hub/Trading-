@@ -14,7 +14,10 @@ Exportverbot für Chips → betroffene Halbleiter ↓. Weltweit, nicht nur USA.
    außer echte Eskalation/Wende). Ergebnis siehe Schema.
 4. **Kurscheck** (`bot/prices.py`): Für jeden betroffenen Wert die Veränderung seit Vortagesschluss und über 5 Tage (Yahoo Chart-API),
    damit sichtbar ist, ob der Zug schon abgefahren ist.
-5. **Push** (`bot/notify.py`): nur wenn `is_big_bet` und `confidence >= ALERT_MIN_CONFIDENCE` (Default 75). Über ntfy.sh.
+5. **Push** (`bot/notify.py`) über ntfy.sh, in zwei Stufen:
+   - `level: "big"`: `is_big_bet` und `confidence >= ALERT_MIN_CONFIDENCE` (Default 75).
+   - `level: "watch"`: `confidence >= WATCH_MIN_CONFIDENCE` (Default 60), aber kein Big Bet. Leiser Push (Priorität 3, Titel „Beobachten: …“). Höchstens einmal je `event_key`; ein späterer Big Bet zum selben Ereignis bleibt erlaubt.
+   - Auf Bestätigung warten: Setzt Opus `awaiting_confirmation`, wird das Ereignis bis zu 12 h in `state.json` (`pending`) gemerkt. Die Triage markiert neue Berichte dazu (`pending_key`). Kommt ein neues Medium dazu, folgt eine erneute Opus-Prüfung mit allen bisherigen Quellen (max. 3 je Ereignis).
 6. **Speichern** (`bot/state.py`): Zustand und Alarme auf dem Branch `data` (`state.json`, `alerts.json`).
 
 Kostenbremse: max. `MAX_ASSESS_PER_DAY` (Default 15) Opus-Aufrufe pro UTC-Tag, im Zustand gezählt. Fehlt `ANTHROPIC_API_KEY`, bricht der Lauf ab, ohne zu pushen.

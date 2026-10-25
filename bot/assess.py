@@ -21,7 +21,7 @@ You are a skeptical, experienced macro and event-driven trader on a multi-asset 
 # What qualifies
 All five must hold:
 1. New. The event happened or was officially announced within the last few hours. Compare the published time with the current time in the message. Analysis, follow-ups, reactions, anniversaries and resurfaced older stories are not new.
-2. Credible. Confirmed by an official source (government, central bank, regulator, company, military) or reported as fact by established outlets (Reuters, Bloomberg, AP, AFP, FT, WSJ, BBC, Nikkei, Handelsblatt and similar). A scoop from a top-tier outlet citing named or multiple sources can qualify with lower confidence. Unverified social-media claims, single fringe outlets, "could/may/considers" speculation and rumors do not.
+2. Credible. Confirmed by an official source (government, central bank, regulator, company, military) or reported as fact by established outlets (Reuters, Bloomberg, AP, AFP, FT, WSJ, BBC, Nikkei, Handelsblatt and similar). A scoop from a top-tier outlet citing named or multiple sources can qualify with lower confidence. Corroboration also counts: if at least three different outlets (different publishers, not copies of one wire story) report the event as fact, or the affected party confirms it, treat it as credible even without a top-tier wire. Unverified social-media claims, a single fringe outlet, a claim made only by one party to a conflict, "could/may/considers" speculation and rumors do not.
 3. Material. Large enough to move a liquid market noticeably: roughly 1-2 % or more for a commodity or index, 3-5 % or more for crypto or a single stock, a clear move in a currency or bond yield. Not a sector footnote.
 4. Surprising. Not already expected. Scheduled data and decisions that land in line with consensus are not Big Bets. A central-bank decision qualifies only if it deviates from expectations (surprise size or direction, emergency or unscheduled meeting, abrupt guidance change).
 5. Clear causal chain. You can state how the event changes supply, demand, cash flows, risk premium or policy for the asset, and in which direction. If reasonable traders could argue either direction, it is not a Big Bet.
@@ -46,7 +46,7 @@ Markets react within minutes to hours. Judge whether markets have already absorb
 Think one step further than the obvious trade: who else is exposed (suppliers, competitors, transport, currencies of exporters/importers, safe havens)? List the most relevant in second_order. Prefer the asset with the most direct and liquid exposure as the primary asset.
 
 # Duplicates
-You receive the alerts already sent in the last 72 hours with their event_key. If this item describes the same underlying event (same actors, same action), it is not new: set duplicate_of_event_key to that key and is_big_bet = false. Exception: a material escalation or reversal of that event (threat turns into a strike, ceasefire collapses, sanctions extended to oil exports, decision reversed, attack hits a far bigger target). Then set duplicate_of_event_key to the earlier key, is_material_escalation = true, give the escalation its own new event_key, and judge it on its own merits. Related headlines from the same run are other coverage of this story; use them to check credibility and freshness, not as separate events.
+You receive the alerts already sent in the last 72 hours with their event_key. If this item describes the same underlying event (same actors, same action), it is not new: set duplicate_of_event_key to that key and is_big_bet = false. Exception: a material escalation or reversal of that event (threat turns into a strike, ceasefire collapses, sanctions extended to oil exports, decision reversed, attack hits a far bigger target). Then set duplicate_of_event_key to the earlier key, is_material_escalation = true, give the escalation its own new event_key, and judge it on its own merits. Related headlines from the same run are other coverage of this story; use them to check credibility and freshness, not as separate events. An earlier alert marked "Beobachten" was an unconfirmed early warning: if this item confirms that same event, it is not a duplicate. Keep its event_key, leave duplicate_of_event_key empty and judge it on its merits.
 
 # Assets
 Name 1-4 assets, most direct exposure first. Use Yahoo Finance tickers exactly:
@@ -66,6 +66,10 @@ confidence (0-100) is the probability that the primary asset moves meaningfully 
 - 75-89: new, credible, material event with a direct mechanism; you would put on the trade yourself.
 - 90-100: exceptional, unambiguous shock (for example a confirmed strike knocking out a large share of a major producer's exports).
 Do not inflate confidence because a topic sounds dramatic. Set is_big_bet = true only if all five criteria hold and confidence is at least 60.
+
+# Awaiting confirmation
+Set awaiting_confirmation = true when the event would clearly matter (criteria 1, 3, 4 and 5 hold or would hold) and the only real shortfall is credibility: a single or weak source, a claim by one party, or no damage report yet. The service then watches the event and asks you again when more outlets report on it. Set it to false for routine, ambiguous, priced-in or old news.
+An item may be such a re-check: then "Earlier coverage of this event" lists what was already seen. Judge credibility from all coverage together and freshness from the newest report. A re-check that is now confirmed can become a Big Bet even though the first report is a few hours old, as long as the market has not absorbed it.
 
 # Output
 Write all text fields in German. Tickers and event_key stay as specified.
@@ -105,6 +109,7 @@ class Assessment(BaseModel):
     assets: list[AssetCall]
     second_order: list[str]
     horizon: Literal["Stunden", "Tage", "Wochen", "Monate"]
+    awaiting_confirmation: bool
     confidence: int
     is_big_bet: bool
     one_liner: str
@@ -116,7 +121,8 @@ def _fmt_ts(ts: int) -> str:
 
 
 def build_user_message(item: NewsItem, triage_score: int, triage_reason: str,
-                       related: list[NewsItem], recent_alerts: list[dict], now: int) -> str:
+                       related: list[NewsItem], recent_alerts: list[dict], now: int,
+                       earlier: list[dict] | None = None) -> str:
     age_min = max(0, (now - item.published) // 60)
     parts = [
         f"Current time: {_fmt_ts(now)}",
@@ -136,11 +142,17 @@ def build_user_message(item: NewsItem, triage_score: int, triage_reason: str,
             parts.append(f"- [{r.source}, {max(0, (now - r.published) // 60)} min ago] {r.title}")
     else:
         parts.append("(none)")
+    if earlier:
+        parts += ["", "## Earlier coverage of this event (re-check of an event awaiting confirmation)"]
+        for src in earlier:
+            mins = max(0, (now - int(src.get("published") or now)) // 60)
+            parts.append(f"- [{src.get('source')}, {mins} min ago] {src.get('title')}")
     parts += ["", "## Alerts already sent in the last 72 hours"]
     if recent_alerts:
         for a in recent_alerts:
             hours = max(0, (now - int(a.get("created_at", now))) // 3600)
-            parts.append(f"- event_key={a.get('event_key')} | {hours} h ago | {a.get('headline')} | {a.get('one_liner')}")
+            level = "Beobachten" if a.get("level") == "watch" else "Big Bet"
+            parts.append(f"- event_key={a.get('event_key')} | {level} | {hours} h ago | {a.get('headline')} | {a.get('one_liner')}")
     else:
         parts.append("(none)")
     parts += ["", "Assess this item according to your instructions."]
@@ -148,10 +160,11 @@ def build_user_message(item: NewsItem, triage_score: int, triage_reason: str,
 
 
 def assess_item(client: anthropic.Anthropic, item: NewsItem, triage_score: int, triage_reason: str,
-                related: list[NewsItem], recent_alerts: list[dict], now: int | None = None) -> tuple[str, Assessment | None]:
+                related: list[NewsItem], recent_alerts: list[dict], now: int | None = None,
+                earlier: list[dict] | None = None) -> tuple[str, Assessment | None]:
     """Return (status, assessment). status: ok | refusal | error | unparsed."""
     now = int(now if now is not None else time.time())
-    user_text = build_user_message(item, triage_score, triage_reason, related, recent_alerts, now)
+    user_text = build_user_message(item, triage_score, triage_reason, related, recent_alerts, now, earlier)
     try:
         resp = client.beta.messages.parse(
             model=config.ASSESS_MODEL,

@@ -219,6 +219,7 @@ h1 {
 }
 
 .meta .spacer { flex: 1; }
+.meta > span:first-child { white-space: nowrap; }
 
 .pill {
   display: inline-flex;
@@ -232,8 +233,11 @@ h1 {
   background: var(--surface-2);
   color: var(--muted);
   border: 1px solid var(--line);
+  white-space: nowrap;
 }
 .pill.hi { color: var(--text); }
+.pill.watch { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
+.card.watch .one-liner { opacity: 0.9; }
 
 .chev {
   width: 16px;

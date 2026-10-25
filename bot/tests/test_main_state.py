@@ -38,7 +38,7 @@ class Harness:
 
 
 def hits(*ids_scores):
-    return resp(TriageResult(hits=[TriageHit(id=i, score=s, reason="r") for i, s in ids_scores]))
+    return resp(TriageResult(hits=[TriageHit(id=i, score=s, reason="r", pending_key="") for i, s in ids_scores]))
 
 
 def test_alert_created_pushed_and_saved(tmp_path):
@@ -49,8 +49,9 @@ def test_alert_created_pushed_and_saved(tmp_path):
     doc = json.loads((tmp_path / "alerts.json").read_text(encoding="utf-8"))
     assert doc["updated_at"] == NOW
     a = doc["alerts"][0]
-    assert set(a) == {"id", "created_at", "event_key", "headline", "one_liner", "assets", "confidence", "horizon",
-                      "rationale", "priced_in", "risks", "second_order", "sources"}
+    assert set(a) == {"id", "created_at", "level", "event_key", "headline", "one_liner", "assets", "confidence",
+                      "horizon", "rationale", "priced_in", "risks", "second_order", "sources"}
+    assert a["level"] == "big"
     assert len(a["id"]) == 8 and a["assets"][0]["change_1d_pct"] == 3.1
     assert a["sources"][0]["url"] == "https://example.com/1"
     st = json.loads((tmp_path / "state.json").read_text())
@@ -63,7 +64,7 @@ def test_below_threshold_or_not_big_bet_no_alert(tmp_path):
     items = [make_item(1), make_item(2, title="Something else entirely here")]
     h = Harness(items, [hits(("h0", 9), ("h1", 8))],
                 [resp(make_assessment(confidence=70)), resp(make_assessment(is_big_bet=False, confidence=90))])
-    h.run(tmp_path)
+    h.run(tmp_path, s=settings(watch_min_confidence=100))  # watch level disabled
     assert h.pushed == []
     assert json.loads((tmp_path / "alerts.json").read_text())["alerts"] == []
 
@@ -213,3 +214,76 @@ def test_cost_of_unknown_model_uses_conservative_price():
     u = SimpleNamespace(input_tokens=1_000_000, output_tokens=0)
     assert llm.cost_of("claude-opus-5-5", u) == 4.0
     assert llm.cost_of("some-future-model", u) == 5.0
+
+
+def pending_hit(i, key):
+    return TriageHit(id=i, score=5, reason="r", pending_key=key)
+
+
+def test_watch_level_for_medium_confidence(tmp_path):
+    from bot import notify
+    h = Harness([make_item(1)], [hits(("h0", 9))], [resp(make_assessment(is_big_bet=False, confidence=65))])
+    h.run(tmp_path)
+    assert len(h.pushed) == 1 and h.pushed[0]["level"] == "watch"
+    payload = notify.build_payload(h.pushed[0], "topic", "https://app/")
+    assert payload["priority"] == 3 and payload["title"].startswith("Beobachten: ")
+    assert "eyes" in payload["tags"]
+    # below the watch threshold: nothing
+    h2 = Harness([make_item(5, title="Other unrelated thing happens")], [hits(("h0", 9))],
+                 [resp(make_assessment(event_key="other-2025-10", is_big_bet=False, confidence=55))])
+    h2.run(tmp_path)
+    assert h2.pushed == []
+
+
+def test_watch_then_confirmed_big_bet_is_not_blocked(tmp_path):
+    h = Harness([make_item(1)], [hits(("h0", 9))], [resp(make_assessment(is_big_bet=False, confidence=65))])
+    h.run(tmp_path)
+    h2 = Harness([make_item(2, title="Reuters confirms terminal hit and export halt")], [hits(("h0", 9))],
+                 [resp(make_assessment(confidence=85))])
+    h2.run(tmp_path, now=NOW + 600)
+    assert len(h2.pushed) == 1 and h2.pushed[0]["level"] == "big"
+    # but a second watch for the same event is suppressed
+    h3 = Harness([make_item(3, title="Yet another report on the terminal")], [hits(("h0", 9))],
+                 [resp(make_assessment(is_big_bet=False, confidence=65))])
+    h3.run(tmp_path, now=NOW + 1200)
+    assert h3.pushed == []
+
+
+def test_unconfirmed_event_is_watched_and_rechecked_on_new_outlet(tmp_path):
+    key = "saudi-oil-terminal-attack-2025-10"
+    # Run 1: important but unconfirmed -> no push, event is watched
+    h = Harness([make_item(1, source="Some Blog")], [hits(("h0", 9))],
+                [resp(make_assessment(is_big_bet=False, confidence=45, awaiting_confirmation=True))])
+    h.run(tmp_path)
+    assert h.pushed == []
+    st = state.load_state(tmp_path)
+    assert key in st["pending"] and st["pending"][key]["sources"][0]["source"] == "Some Blog"
+
+    # Run 2: same outlet again -> no Opus re-check
+    h2 = Harness([make_item(2, title="Blog follow-up on terminal", source="Some Blog")],
+                 [resp(TriageResult(hits=[pending_hit("h0", key)]))], [])
+    h2.run(tmp_path, now=NOW + 600)
+    assert h2.client.beta.messages.calls == []
+    assert "Events awaiting confirmation" in h2.client.messages.calls[0]["messages"][0]["content"]
+
+    # Run 3: a new outlet reports it -> re-check with earlier coverage, now a Big Bet
+    h3 = Harness([make_item(3, title="AP: terminal hit confirmed by Aramco", source="AP")],
+                 [resp(TriageResult(hits=[pending_hit("h0", key)]))], [resp(make_assessment(confidence=85))])
+    h3.run(tmp_path, now=NOW + 1200)
+    assert len(h3.client.beta.messages.calls) == 1
+    msg = h3.client.beta.messages.calls[0]["messages"][0]["content"]
+    assert "Earlier coverage of this event" in msg and "Some Blog" in msg
+    assert len(h3.pushed) == 1 and h3.pushed[0]["level"] == "big"
+    assert key not in state.load_state(tmp_path)["pending"]
+
+
+def test_pending_expires_and_unknown_keys_are_ignored(tmp_path):
+    st = state.empty_state()
+    st["pending"]["old-event"] = {"first_seen": NOW - 13 * 3600, "rechecks": 0, "sources": [], "headline": "x"}
+    st["pending"]["fresh-event"] = {"first_seen": NOW - 3600, "rechecks": 0, "sources": [], "headline": "y"}
+    state.save_state(tmp_path, st, NOW)
+    saved = state.load_state(tmp_path)
+    assert set(saved["pending"]) == {"fresh-event"}
+    h = Harness([make_item(1)], [resp(TriageResult(hits=[pending_hit("h0", "made-up-key")]))], [])
+    h.run(tmp_path)
+    assert h.client.beta.messages.calls == []

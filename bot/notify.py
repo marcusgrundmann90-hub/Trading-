@@ -26,7 +26,9 @@ def build_message(alert: dict) -> str:
     return msg
 
 
-def priority_for(confidence: int) -> int:
+def priority_for(confidence: int, level: str = "big") -> int:
+    if level == "watch":
+        return 3  # normal priority: shows up, but no urgent alarm sound
     return 5 if confidence >= 90 else 4
 
 
@@ -34,6 +36,8 @@ def tags_for(alert: dict) -> list[str]:
     assets = alert.get("assets") or []
     direction = assets[0].get("direction") if assets else None
     tags = ["chart_with_downwards_trend" if direction == "short" else "chart_with_upwards_trend"]
+    if alert.get("level") == "watch":
+        return ["eyes"] + tags
     if alert.get("confidence", 0) >= 90:
         tags.append("rotating_light")
     return tags
@@ -42,9 +46,9 @@ def tags_for(alert: dict) -> list[str]:
 def build_payload(alert: dict, topic: str, app_url: str) -> dict:
     return {
         "topic": topic,
-        "title": alert["headline"],
-        "message": build_message(alert),
-        "priority": priority_for(int(alert.get("confidence", 0))),
+        "title": ("Beobachten: " if alert.get("level") == "watch" else "") + alert["headline"],
+        "message": build_message(alert) + ("\nNoch unsicher – erst handeln, wenn es sich bestätigt." if alert.get("level") == "watch" else ""),
+        "priority": priority_for(int(alert.get("confidence", 0)), alert.get("level", "big")),
         "tags": tags_for(alert),
         "click": f"{app_url.rstrip('/')}/#{alert['id']}",
     }

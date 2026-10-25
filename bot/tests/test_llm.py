@@ -18,9 +18,9 @@ def _validation_error():
 
 def test_triage_maps_ids_and_filters_scores():
     items = [make_item(i, title=f"headline {i}") for i in range(3)]
-    result = TriageResult(hits=[TriageHit(id="h0", score=9, reason="Angriff"),
-                                TriageHit(id="h1", score=5, reason="routine"),
-                                TriageHit(id="h99", score=10, reason="hallucinated id")])
+    result = TriageResult(hits=[TriageHit(id="h0", score=9, reason="Angriff", pending_key=""),
+                                TriageHit(id="h1", score=5, reason="routine", pending_key=""),
+                                TriageHit(id="h99", score=10, reason="hallucinated id", pending_key="")])
     client = FakeClient(triage=[resp(result)])
     out = triage.triage(client, items, NOW)
     assert [(c[0].id, c[1]) for c in out.candidates] == [("id0", 9)]
@@ -36,7 +36,7 @@ def test_triage_maps_ids_and_filters_scores():
 
 def test_triage_batches_and_survives_errors():
     items = [make_item(i, title=f"headline {i}") for i in range(5)]
-    ok = resp(TriageResult(hits=[TriageHit(id="h0", score=8, reason="x")]))
+    ok = resp(TriageResult(hits=[TriageHit(id="h0", score=8, reason="x", pending_key="")]))
     client = FakeClient(triage=[rate_limit_error(), ok, connection_error()])
     out = triage.triage(client, items, NOW, batch_size=2)
     assert out.calls == 3 and out.failed_batches == 2

@@ -312,7 +312,7 @@ function renderDetail(al) {
 function renderCard(al) {
   const assets = Array.isArray(al.assets) ? al.assets : [];
   const dir = dirOf(assets[0]);
-  const li = el('li', `card${dir ? ' ' + dir : ''}`);
+  const li = el('li', `card${dir ? ' ' + dir : ''}${al.level === 'watch' ? ' watch' : ''}`);
   li.id = String(al.id);
   li.dataset.id = String(al.id);
 
@@ -324,6 +324,7 @@ function renderCard(al) {
   const meta = el('div', 'meta');
   meta.appendChild(el('span', '', relTime(Number(al.created_at))));
   meta.appendChild(el('span', 'spacer'));
+  if (al.level === 'watch') meta.appendChild(el('span', 'pill watch', 'Beobachten'));
   const conf = Number(al.confidence);
   if (Number.isFinite(conf)) {
     const pill = el('span', `pill${conf >= 85 ? ' hi' : ''}`, `Konfidenz ${conf}`);
