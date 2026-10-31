@@ -1,0 +1,145 @@
+{
+ "updated_at": 1793469524,
+ "alerts": [
+  {
+   "id": "07221ade",
+   "created_at": 1793399138,
+   "event_key": "iran-hormuz-mines-tankers-2026-10",
+   "headline": "Tanker laufen in Straße von Hormus auf Minen",
+   "one_liner": "🛢️ LONG Öl (Brent) · Minen treffen Tanker in Hormus · hoch · Tage",
+   "assets": [
+    {
+     "name": "Brent Rohöl",
+     "ticker": "BZ=F",
+     "direction": "long",
+     "conviction": 9,
+     "change_1d_pct": -2.22,
+     "change_5d_pct": -3.0
+    },
+    {
+     "name": "WTI Rohöl",
+     "ticker": "CL=F",
+     "direction": "long",
+     "conviction": 8,
+     "change_1d_pct": 0.93,
+     "change_5d_pct": 1.17
+    },
+    {
+     "name": "Gold",
+     "ticker": "GC=F",
+     "direction": "long",
+     "conviction": 6,
+     "change_1d_pct": -3.63,
+     "change_5d_pct": -3.8
+    },
+    {
+     "name": "Airlines ETF",
+     "ticker": "JETS",
+     "direction": "short",
+     "conviction": 6,
+     "change_1d_pct": -2.04,
+     "change_5d_pct": 3.18
+    }
+   ],
+   "confidence": 78,
+   "horizon": "Tage",
+   "rationale": "Laut Iran sind vier Tanker in der Straße von Hormus auf Minen gelaufen und in Brand geraten. Das ist eine deutliche Eskalation gegenüber der US-Seeblockade: Betroffen ist nicht mehr nur der iranische Export, sondern die Route für rund ein Fünftel des weltweiten Ölhandels. Schon die Verminung lässt Versicherungsprämien steigen, kann den Tankerverkehr stoppen und erhöht die Risikoprämie auf Rohöl massiv. Die Meldung kam kurz vor bzw. nach Handelsschluss am Freitag, daher dürfte sich der Großteil der Bewegung zur Wochenöffnung entladen.",
+   "priced_in": "teilweise",
+   "risks": "Die Angaben stammen von iranischer Seite und könnten übertrieben sein. Eine rasche Räumung der Minen oder Geleitschutz durch die US-Marine über das Wochenende könnte den Aufschlag bei Wochenöffnung begrenzen.",
+   "second_order": [
+    "Tanker-Reedereien ↑ (Frachtraten)",
+    "Airlines ↓",
+    "LNG/TTF ↑ (Katar-Exporte via Hormus)",
+    "Asiatische Importeure (JPY, INR) ↓"
+   ],
+   "sources": [
+    {
+     "title": "Iran says 4 tankers strike mines and catch fire in Strait of Hormuz, and other Mideast news",
+     "url": "https://news.google.com/rss/articles/CBMikgFBVV95cUxOOEpYN1k4WGRzNW1fT2pyNHVESDhKWVJlTVNDbTZLVmdhY1lRUDRqT0p2WlpZSmNCUm9McUx2bXROS3E0YVRMbEp4U3V4cDcyNzFEbGZsRVM3a2V5NXRnblpucGtMTFZUMFZsYXZ0M1VxQkR6eTRackRZWmd4VE42RkcyZ043b3hXX0FhazZPdEJjQQ?oc=5",
+     "source": "AP News",
+     "published": 1793394600
+    },
+    {
+     "title": "Iran says 3 tankers strike mines and catch fire in Strait of Hormuz, and other Mideast news",
+     "url": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxOdXB4SlJYaEVBZXRMdEtvcHdSYmphd0MzSXZhN0lkVzM1THNHSEZVX0V4RWZ3RWNHT3NybTh4ZEFGT1RiNDVjOFJhM3B5ekJGbFhPbEFkcFotenlmOGpvSWVOTktHV1VOdXBESWZPNDMtSGJNTHZ2dEkyYnM2WEJjMlZlbFFRNVFwRlhWWHRfSkxwUGhvOWI0cXBhVEt5WXh6U0dUcWFwVmtKdUZWeHJGdDhYMS1LQThtMWcwNFVrQUlucmF2U1FtdEU2enoxOVk2STk1dk93NjBvNHlyZ0JhNFhoU2JnbHp6Zy0tYWQ5TVRXWWJMTC1ma3lPbw?oc=5",
+     "source": "Marietta Daily Journal",
+     "published": 1793392397
+    },
+    {
+     "title": "Iran says multiple oil tankers strike mines, catch fire in Strait of Hormuz | World News",
+     "url": "https://news.google.com/rss/articles/CBMi0wFBVV95cUxPZUFubXhYY3drdkwxQUM4RjhxSjdzeTM1dDNUS2xoYVZhcm5XdHdnS1ZPUWQ4ZlpPTElxZk9zWURpbkpod3FjLTUxUUZ2NGt4UTJpbGFfU2hKOU0tMXRXY1ZXSEc0emcyd2oyMWtSRk82bTVQczc1YnhFUGxqeG1kb2t5OWZxTnNMR2hncF9ZRzdyai1TN2Q2RWc3MHJKUTFRdGg2LWRjU3hBaEJmOHdqbTFuX2JGNEFIcVdMUFotVURodGEzNUoxdXlRc0VycTZFekln0gHYAUFVX3lxTE1Gb2Zha2RYaDJNdHBEY2NfaUNNb2o5ZTlYVmo2VDBhRUN2UjhjNXhRRnZjNzExa3R1dnlWLS1sdzJtQ0RRUU5uWXRBU3ppd2lKUnhjVmRGajdqaHU4b2lMQnRhYnhzU182ZUx6SUNON1VOcUlWU05hb3lRd2pfTjBQS0Y5d3NNLXBOYmJXMks3RXlOSm1FT2o2YTNPb3JpNnNISnJ3NWRIZkVJT2RpT2o1dzN5RXV3cFFQa0xvZkd6aU9UaGFmQ0xHaUJwLXZFNkhOZDdxSDl6UA?oc=5",
+     "source": "Hindustan Times",
+     "published": 1793396832
+    }
+   ]
+  },
+  {
+   "id": "5f2f7294",
+   "created_at": 1793306578,
+   "event_key": "us-iran-naval-blockade-2026-10",
+   "headline": "Trump verkündet Seeblockade gegen Iran",
+   "one_liner": "🛢️ LONG Öl (Brent) · USA verhängen Seeblockade gegen Iran · hoch · Tage",
+   "assets": [
+    {
+     "name": "Brent Rohöl",
+     "ticker": "BZ=F",
+     "direction": "long",
+     "conviction": 8,
+     "change_1d_pct": -3.2,
+     "change_5d_pct": -3.61
+    },
+    {
+     "name": "WTI Rohöl",
+     "ticker": "CL=F",
+     "direction": "long",
+     "conviction": 7,
+     "change_1d_pct": 0.06,
+     "change_5d_pct": 1.06
+    },
+    {
+     "name": "US-Airlines ETF",
+     "ticker": "JETS",
+     "direction": "short",
+     "conviction": 5,
+     "change_1d_pct": 1.93,
+     "change_5d_pct": 2.69
+    },
+    {
+     "name": "Gold",
+     "ticker": "GC=F",
+     "direction": "long",
+     "conviction": 4,
+     "change_1d_pct": -0.32,
+     "change_5d_pct": 0.01
+    }
+   ],
+   "confidence": 76,
+   "horizon": "Tage",
+   "rationale": "Eine US-Seeblockade würde Irans Rohölexporte (rund 1,5–2 Mio. b/d, überwiegend nach China) weitgehend abschneiden und damit das globale Angebot direkt verknappen. Zugleich steigt das Risiko iranischer Vergeltung gegen den Tankerverkehr in der Straße von Hormus, was die Risikoprämie auf Öl deutlich erhöht. Die Meldung ist 50 Minuten alt und stammt aus einer etablierten Quelle. Das Scheitern der Gespräche mag erwartet gewesen sein, eine Blockade als Reaktion ist jedoch eine klare Eskalationsstufe.",
+   "priced_in": "teilweise",
+   "risks": "Eine schnelle Rückkehr an den Verhandlungstisch, eine nur lückenhafte Durchsetzung der Blockade oder ein Ausgleich durch OPEC+-Mehrförderung und Freigaben aus strategischen Reserven könnten den Anstieg begrenzen. Ein Teil der Prämie könnte nach dem Scheitern der Gespräche bereits eingepreist sein.",
+   "second_order": [
+    "Tanker-Reedereien ↑ (höhere Frachtraten)",
+    "Airlines ↓ (Kerosinkosten)",
+    "Chinesische Raffinerien ↓ (Verlust günstigen Iran-Öls)",
+    "Rüstungswerte ↑"
+   ],
+   "sources": [
+    {
+     "title": "Trump announces naval blockade of Iran after Islamabad talks yield no deal",
+     "url": "https://news.google.com/rss/articles/CBMihwJBVV95cUxNLUhqR0JLZExuRGV0OGdtSXNnWFZra0dESHpvcWhJdmVGYldWNjN3dmhZdXRjaEFxZjlpMk1FdEJkNGF5QWNDYnJVY3FwNFNwWXNFY2ZYOVNWUmdqLU9pbTJ5WTVFdUtDVm9JWFdQMENGYU1HRnJBRndfX3lNaHdMaTlQSkN0eTUtZG41dnFBc0xfMTAxSGR1Y3RxekNqWWFpSUtPZXljTk9VVDFWcG5QcGl2NGdZM0FnQ3N6VFd0VW80UHJzbUZaMFlqWXB4NVQ2cDdfcW5TSDMwRnpJN2xXQ0puY054Unp1ZjFzbGR6eUhBR21GUVJYV19LQjhNUEhQX3Nxc2RoYw?oc=5",
+     "source": "The Washington Post",
+     "published": 1793303520
+    }
+   ]
+  }
+ ],
+ "usage": {
+  "today_usd": 0.2179,
+  "month_usd": 5.0741,
+  "last30_usd": 5.0741,
+  "assess_today": 7,
+  "assess_max_per_day": 15,
+  "tracked_since": "2026-10-16"
+ }
+}
